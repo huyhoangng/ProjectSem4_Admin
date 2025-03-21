@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const Topbar = () => {
     const [showAlerts, setShowAlerts] = useState(false);
     const [showMessages, setShowMessages] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
+    const navigate = useNavigate();
 
     // Đóng dropdown khi click ra ngoài
     useEffect(() => {
@@ -19,8 +22,22 @@ const Topbar = () => {
         return () => document.removeEventListener("click", handleClickOutside);
     }, []);
 
+    // Xử lý logout
+    const handleLogout = async () => {
+        try {
+            await axios.post("http://localhost:8080/trainingSouls/auth/logout", {}, { withCredentials: true });
+            alert("Đăng xuất thành công!");
+            navigate("/login"); // Chuyển hướng về trang đăng nhập
+        } catch (error) {
+            console.error("Lỗi khi đăng xuất:", error);
+            alert("Đăng xuất thất bại!");
+        }
+    };
+
     return (
-        <nav className="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+        <nav className="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow ml-0 mr-0">
+
+
             <button id="sidebarToggleTop" className="btn btn-link d-md-none rounded-circle mr-3">
                 <i className="fa fa-bars"></i>
             </button>
@@ -107,10 +124,10 @@ const Topbar = () => {
                                 Activity Log
                             </a>
                             <div className="dropdown-divider"></div>
-                            <a className="dropdown-item" href="/login">
+                            <button className="dropdown-item" onClick={handleLogout}>
                                 <i className="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
                                 Logout
-                            </a>
+                            </button>
                         </div>
                     )}
                 </li>

@@ -1,24 +1,49 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { FaGoogle, FaFacebookF } from "react-icons/fa";
 
 const LoginAdmin = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(""); // Đúng
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false); // Trạng thái loading
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+    console.log("Đang gửi:", email, password); // Kiểm tra dữ liệu nhập vào
 
-    // Giả lập kiểm tra tài khoản (Bạn có thể thay bằng API thật)
-    if (email === "admin@gmail.com" && password === "123456") {
+    if (!email || !password) {
+      alert("Vui lòng nhập đầy đủ email và password!");
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        "http://54.251.220.228:8080/trainingSouls/auth/login",
+        { email, password },
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      console.log("Phản hồi từ server:", response.data);
       alert("Đăng nhập thành công!");
-      navigate("/"); // Chuyển hướng tới trang chủ admin
-    } else {
-      alert("Sai email hoặc mật khẩu!");
+      if (response.status === 200) {
+        const token = response.data.result.token;
+        sessionStorage.setItem("token", token);
+        console.log("Token đã lưu:", token);
+        alert("Đăng nhập thành công!");
+
+        navigate("/adminmanager"); // Kiểm tra nếu trang không đổi
+      }
+    } catch (error) {
+      console.error("Lỗi đăng nhập:", error.response?.data || error);
+      alert("Email hoặc mật khẩu không đúng!");
     }
   };
+
+
+
 
   return (
     <div className="bg-gradient-primary min-vh-100 d-flex align-items-center justify-content-center">
@@ -37,13 +62,14 @@ const LoginAdmin = () => {
                       <form className="user" onSubmit={handleLogin}>
                         <div className="form-group">
                           <input
-                            type="email"
+                            type="text"
                             className="form-control form-control-user"
-                            placeholder="Enter Email Address..."
+                            placeholder="Enter Email..." // Cập nhật placeholder cho đúng
                             value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            onChange={(e) => setEmail(e.target.value)} // Đúng
                             required
                           />
+
                         </div>
                         <div className="form-group">
                           <input
@@ -51,9 +77,10 @@ const LoginAdmin = () => {
                             className="form-control form-control-user"
                             placeholder="Password"
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            onChange={(e) => setPassword(e.target.value)} // Đảm bảo cập nhật đúng state
                             required
                           />
+
                         </div>
                         <div className="form-group">
                           <div className="custom-control custom-checkbox small">
@@ -63,14 +90,14 @@ const LoginAdmin = () => {
                             </label>
                           </div>
                         </div>
-                        <button type="submit" className="btn btn-primary btn-user btn-block">
-                          Login
+                        <button type="submit" className="btn btn-primary btn-user btn-block" disabled={loading}>
+                          {loading ? "Logging in..." : "Login"}
                         </button>
                         <hr />
-                        <button className="btn btn-google btn-user btn-block">
+                        <button type="button" className="btn btn-google btn-user btn-block">
                           <FaGoogle className="mr-2" /> Login with Google
                         </button>
-                        <button className="btn btn-facebook btn-user btn-block">
+                        <button type="button" className="btn btn-facebook btn-user btn-block">
                           <FaFacebookF className="mr-2" /> Login with Facebook
                         </button>
                       </form>

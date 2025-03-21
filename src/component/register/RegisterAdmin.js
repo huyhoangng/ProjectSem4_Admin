@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const CreateAdmin = () => {
+const RegisterAdmin = () => {
   const navigate = useNavigate();
 
   // State quản lý form
@@ -127,4 +127,4 @@ const CreateAdmin = () => {
   );
 };
 
-export default CreateAdmin;
+export default RegisterAdmin;

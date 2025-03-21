@@ -1,11 +1,12 @@
 import React from "react";
-import CreateAdmin from "../component/create/CreateAdmin";
+import RegisterAdmin from "../component/register/RegisterAdmin";
+
 
 
 const RegisterPage = () => {
   return (
     <div>
-      <CreateAdmin />
+      <RegisterAdmin />
     </div>
   );
 };

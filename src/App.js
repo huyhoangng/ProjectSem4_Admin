@@ -1,21 +1,48 @@
-import React from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import React, { useEffect } from "react";
+import { BrowserRouter as Router, Route, Routes, useNavigate } from "react-router-dom";
 import "../src/assets/css/sb-admin-2.css";
 import "../src/assets/css/sb-admin-2.min.css";
-import Layout from "./Layout";
-import IndexPage from "./pages/IndexPage";
+
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ForgotPage from "./pages/ForgotPage";
+import Admin from "./pages/Admin";
+import ProtectedLayout from "./layout/ProtectedLayout";
+import PackagePage from "./pages/PackagePage";
+import PostPage from "./pages/PostPage";
+import UsersManagementPage from "./pages/UsersManagementPage";
+import PackageManagement from "./component/packagePage/PackageList";
+
+const RedirectToLogin = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    navigate("/login"); // Chuyển hướng đến login khi trang load
+  }, [navigate]);
+
+  return null;
+};
 
 const App = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/" element={<RedirectToLogin />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/forgotpass" element={<ForgotPage/>}/>
-        <Route path="/" element={<Layout><IndexPage /></Layout>} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgotpass" element={<ForgotPage />} />
+
+        {/* Các trang có layout */}
+        <Route element={<ProtectedLayout />}>
+          <Route path="/adminmanager" element={<Admin />} />
+          <Route path="/packages" element={<PackagePage />} />
+          <Route path="/posts" element={<PostPage />} />
+          <Route path="/usermanagement" element={<UsersManagementPage />} />
+          <Route path="/admin/training-packages" element={<PackageManagement/>} />
+<Route path="/admin/training-packages/new" element={<PackageManagement />} />
+<Route path="/admin/training-packages/edit/:id" element={<PackageManagement />} />
+
+        </Route>
       </Routes>
     </Router>
   );

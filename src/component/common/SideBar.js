@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { FaLaughWink, FaTachometerAlt, FaCog, FaWrench, FaFolder, FaChartArea, FaTable } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { GiMuscleUp } from "react-icons/gi";
 
 
 const Sidebar = () => {
@@ -11,11 +12,11 @@ const Sidebar = () => {
     <ul className={`navbar-nav bg-gradient-primary sidebar sidebar-dark accordion ${collapsed ? "toggled" : ""}`} id="accordionSidebar">
       {/* Sidebar - Brand */}
       <Link className="sidebar-brand d-flex align-items-center justify-content-center" to="/">
-        <div className="sidebar-brand-icon rotate-n-15">
-          <FaLaughWink />
-        </div>
-        <div className="sidebar-brand-text mx-3">For Health </div>
-      </Link>
+      <div className="sidebar-brand-icon rotate-n-15">
+        <GiMuscleUp /> {/* Icon tay cơ bắp */}
+      </div>
+      <div className="sidebar-brand-text mx-3">Training Soul</div>
+    </Link>
 
       <hr className="sidebar-divider my-0" />
 
@@ -33,12 +34,12 @@ const Sidebar = () => {
       <li className="nav-item">
         <a className="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseComponents">
           <FaCog />
-          <span> Components</span>
+          <span> User Management</span>
         </a>
         <div id="collapseComponents" className="collapse">
           <div className="bg-white py-2 collapse-inner rounded">
-            <h6 className="collapse-header">Custom Components:</h6>
-            <Link className="collapse-item" to="/buttons">Buttons</Link>
+            <h6 className="collapse-header">Custom User:</h6>
+            <Link className="collapse-item" to="/usermanagement">Account User</Link>
             <Link className="collapse-item" to="/cards">Cards</Link>
           </div>
         </div>
@@ -48,13 +49,13 @@ const Sidebar = () => {
       <li className="nav-item">
         <a className="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUtilities">
           <FaWrench />
-          <span> Utilities</span>
+          <span> Packages</span>
         </a>
         <div id="collapseUtilities" className="collapse">
           <div className="bg-white py-2 collapse-inner rounded">
-            <h6 className="collapse-header">Custom Utilities:</h6>
-            <Link className="collapse-item" to="/utilities-color">Colors</Link>
-            <Link className="collapse-item" to="/utilities-border">Borders</Link>
+            <h6 className="collapse-header">Custom package:</h6>
+            <Link className="collapse-item" to="/packages">PackageList</Link>
+            <Link className="collapse-item" to="/utilities-border">Challenger</Link>
           </div>
         </div>
       </li>
@@ -69,9 +70,9 @@ const Sidebar = () => {
         </a>
         <div id="collapsePages" className="collapse">
           <div className="bg-white py-2 collapse-inner rounded">
-            <h6 className="collapse-header">Login Screens:</h6>
-            <Link className="collapse-item" to="/login">Login</Link>
-            <Link className="collapse-item" to="/register">Register</Link>
+            <h6 className="collapse-header">Posts Screens:</h6>
+            <Link className="collapse-item" to="/posts">All Post</Link>
+            <Link className="collapse-item" to="/register">Classes</Link>
           </div>
         </div>
       </li>
@@ -80,15 +81,15 @@ const Sidebar = () => {
       <li className="nav-item">
         <Link className="nav-link" to="/charts">
           <FaChartArea />
-          <span> Charts</span>
+          <span> Rank </span>
         </Link>
       </li>
 
       {/* Tables */}
       <li className="nav-item">
-        <Link className="nav-link" to="/tables">
+        <Link className="nav-link" to="/adminmanager">
           <FaTable />
-          <span> Tables</span>
+          <span> Admin Management</span>
         </Link>
       </li>
 
