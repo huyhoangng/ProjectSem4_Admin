@@ -11299,7 +11299,7 @@ body.sidebar-toggled footer.sticky-footer {
 .layout-container {
   display: flex;
   flex-direction: column;
-  min-height: 100vh; /* Chiều cao tối thiểu để full màn hình */
+  min-height: 120vh; /* Chiều cao tối thiểu để full màn hình */
 }
 
 .layout-content {

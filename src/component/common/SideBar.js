@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { FaLaughWink, FaTachometerAlt, FaCog, FaWrench, FaFolder, FaChartArea, FaTable } from "react-icons/fa";
+import { FaLaughWink, FaTachometerAlt, FaCog, FaWrench, FaFolder, FaChartArea, FaTable, FaDumbbell  } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { GiMuscleUp } from "react-icons/gi";
+
 
 
 const Sidebar = () => {
@@ -84,6 +85,13 @@ const Sidebar = () => {
           <span> Rank </span>
         </Link>
       </li>
+      {/* workout*/}
+      <li className="nav-item">
+  <Link className="nav-link" to="/exercise">
+    <FaDumbbell /> {/* Icon Workout */}
+    <span> Workout </span>
+  </Link>
+</li>
 
       {/* Tables */}
       <li className="nav-item">
@@ -97,8 +105,12 @@ const Sidebar = () => {
 
       {/* Toggle Button */}
       <div className="text-center d-none d-md-inline">
-        <button className="rounded-circle border-0" onClick={() => setCollapsed(!collapsed)}></button>
-      </div>
+  <button className="rounded-circle border-0" onClick={() => setCollapsed(!collapsed)}>
+    <i className={`fas ${collapsed ? "fa-arrow-right" : "fa-arrow-left"}`}></i>
+  </button>
+</div>
+
+
     </ul>
   );
 };

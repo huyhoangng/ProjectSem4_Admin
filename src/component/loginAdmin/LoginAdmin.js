@@ -34,7 +34,7 @@ const LoginAdmin = () => {
         console.log("Token đã lưu:", token);
         alert("Đăng nhập thành công!");
 
-        navigate("/adminmanager"); // Kiểm tra nếu trang không đổi
+        navigate("/dashboard"); // Kiểm tra nếu trang không đổi
       }
     } catch (error) {
       console.error("Lỗi đăng nhập:", error.response?.data || error);
