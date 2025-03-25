@@ -15,7 +15,7 @@ const ProtectedLayout = () => {
     <Outlet />
   ) : (
     <div className="layout-container">
-      <Topbar />
+      {/* <Topbar /> */}
       <div className="layout-content">
         <Sidebar />
         <main className="main-content">
