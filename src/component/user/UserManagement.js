@@ -52,8 +52,6 @@ const UserManagement = () => {
       return;
     }
 
-    console.log("Gửi request cập nhật:", selectedUser.id, formData);
-
     try {
       await axios.put(
         `http://54.251.220.228:8080/trainingSouls/users/${selectedUser.userID}`,
@@ -73,7 +71,7 @@ const UserManagement = () => {
   };
 
   // 🔴 Xóa user
-  const handleDelete = async (userId) => {
+  const handleDelete = async (userID) => {
     const token = sessionStorage.getItem("token");
     if (!token) {
       console.error("Không tìm thấy token!");
@@ -82,11 +80,9 @@ const UserManagement = () => {
 
     if (!window.confirm("Bạn có chắc muốn xóa người dùng này?")) return;
 
-    console.log("Gửi request xóa user:", userId);
-
     try {
       await axios.delete(
-        `http://54.251.220.228:8080/trainingSouls/users/${userId}`,
+        `http://54.251.220.228:8080/trainingSouls/users/${userID}`,
         {
           headers: { "Authorization": `Bearer ${token}` }
         }
@@ -116,8 +112,6 @@ const UserManagement = () => {
       return;
     }
 
-    console.log("Gửi request thêm user:", formData);
-
     try {
       await axios.post(
         `http://54.251.220.228:8080/trainingSouls/users`,
@@ -139,9 +133,7 @@ const UserManagement = () => {
   return (
     <div className="container mt-4">
       <h2 className="mb-3">Quản lý tài khoản người dùng</h2>
-      <Button variant="success" className="mb-3" onClick={handleAddUser}>
-        + Thêm người dùng
-      </Button>
+      <Button variant="success" className="mb-3" onClick={handleAddUser}>+ Thêm người dùng</Button>
 
       <Table striped bordered hover>
         <thead>
@@ -156,14 +148,14 @@ const UserManagement = () => {
         <tbody>
           {users.length > 0 ? (
             users.map((user) => (
-              <tr key={user.id}>
-                <td>{user.id}</td>
+              <tr key={user.userID}>
+                <td>{user.userID}</td>
                 <td>{user.name}</td>
                 <td>{user.email}</td>
                 <td>{user.package}</td>
                 <td>
                   <Button variant="warning" onClick={() => handleEditClick(user)}>Chỉnh sửa</Button>{' '}
-                  <Button variant="danger" onClick={() => handleDelete(user.id)}>Xóa</Button>
+                  <Button variant="danger" onClick={() => handleDelete(user.userID)}>Xóa</Button>
                 </td>
               </tr>
             ))
@@ -175,28 +167,17 @@ const UserManagement = () => {
         </tbody>
       </Table>
 
-      {/* 🟡 Modal chỉnh sửa tài khoản */}
+      {/* Modal chỉnh sửa tài khoản */}
       <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Chỉnh sửa tài khoản</Modal.Title>
-        </Modal.Header>
+        <Modal.Header closeButton><Modal.Title>Chỉnh sửa tài khoản</Modal.Title></Modal.Header>
         <Modal.Body>
           <Form>
-            <Form.Group>
-              <Form.Label>Tên</Form.Label>
-              <Form.Control type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
-            </Form.Group>
-            <Form.Group>
-              <Form.Label>Email</Form.Label>
-              <Form.Control type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
-            </Form.Group>
-            <Form.Group>
-              <Form.Label>Gói đăng ký</Form.Label>
-              <Form.Control as="select" value={formData.package} onChange={(e) => setFormData({ ...formData, package: e.target.value })}>
-                <option value="free">Free</option>
-                <option value="premium">Premium</option>
-              </Form.Control>
-            </Form.Group>
+            <Form.Group><Form.Label>Tên</Form.Label><Form.Control type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} /></Form.Group>
+            <Form.Group><Form.Label>Email</Form.Label><Form.Control type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} /></Form.Group>
+            <Form.Group><Form.Label>Gói đăng ký</Form.Label><Form.Control as="select" value={formData.package} onChange={(e) => setFormData({ ...formData, package: e.target.value })}>
+              <option value="free">Free</option>
+              <option value="premium">Premium</option>
+            </Form.Control></Form.Group>
           </Form>
         </Modal.Body>
         <Modal.Footer>
