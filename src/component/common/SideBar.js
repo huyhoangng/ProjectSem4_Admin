@@ -86,7 +86,7 @@ const Sidebar = () => {
 
       {/* Charts */}
       <li className="nav-item">
-        <Link className="nav-link" to="/charts">
+        <Link className="nav-link" to="/yourRank">
           <FaChartArea />
           <span> Rank </span>
         </Link>

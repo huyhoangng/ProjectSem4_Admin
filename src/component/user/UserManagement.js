@@ -133,7 +133,7 @@ const UserManagement = () => {
   return (
     <div className="container mt-4">
       <h2 className="mb-3">Quản lý tài khoản người dùng</h2>
-      <Button variant="success" className="mb-3" onClick={handleAddUser}>+ Thêm người dùng</Button>
+      {/* <Button variant="success" className="mb-3" onClick={handleAddUser}>+ Thêm người dùng</Button> */}
 
       <Table striped bordered hover>
         <thead>
@@ -155,7 +155,7 @@ const UserManagement = () => {
                 <td>{user.package}</td>
                 <td>
                   <Button variant="warning" onClick={() => handleEditClick(user)}>Chỉnh sửa</Button>{' '}
-                  <Button variant="danger" onClick={() => handleDelete(user.userID)}>Xóa</Button>
+                  {/* <Button variant="danger" onClick={() => handleDelete(user.userID)}>Xóa</Button> */}
                 </td>
               </tr>
             ))
@@ -185,6 +185,23 @@ const UserManagement = () => {
           <Button variant="primary" onClick={handleSaveChanges}>Lưu</Button>
         </Modal.Footer>
       </Modal>
+        {/* 🔝 Nút quay lên đầu trang */}
+        <button
+  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+  title="Lên đầu trang"
+  style={{
+    position: 'fixed',
+    bottom: '30px',
+    right: '30px',
+    border: 'none',
+    background: 'transparent',
+    fontSize: '2rem',
+    cursor: 'pointer'
+  }}
+>
+  ⬆️
+</button>
+
     </div>
   );
 };

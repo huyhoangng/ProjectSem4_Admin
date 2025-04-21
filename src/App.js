@@ -14,6 +14,7 @@ import UsersManagementPage from "./pages/UsersManagementPage";
 import PackageManagement from "./component/packagePage/PackageList";
 import ExercisePage from "./pages/ExercisePage";
 import IndexPage from "./pages/IndexPage";
+import RankPage from "./pages/RankPage";
 
 const RedirectToLogin = () => {
   const navigate = useNavigate();
@@ -45,6 +46,7 @@ const App = () => {
 <Route path="/admin/training-packages/edit/:id" element={<PackageManagement />} />
 <Route path="/exercise" element={<ExercisePage/>}/>
 <Route path="/dashboard" element={<IndexPage/>}/>
+<Route path="/yourRank" element={<RankPage/>}/>
 
         </Route>
       </Routes>

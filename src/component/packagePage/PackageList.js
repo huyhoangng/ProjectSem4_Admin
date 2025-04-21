@@ -17,6 +17,7 @@ const PackageManagement = () => {
   const [packages, setPackages] = useState([]);
   const [packageData, setPackageData] = useState({ name: "", price: "", duration: "" });
   const [isEditing, setIsEditing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(""); // New state for error messages
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
@@ -63,11 +64,16 @@ const PackageManagement = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!packageData.name || !packageData.price || !packageData.duration) {
+      setErrorMessage("Tất cả các trường đều phải được điền đầy đủ!");
+      return;
+    }
+    setErrorMessage(""); // Clear error message if form is valid
     try {
       if (isEditing) {
         await axios.put(`http://54.251.220.228:8080/trainingSouls/update-item/${id}`, packageData, { headers });
       } else {
-        await axios.post("http://54.251.220.228:8080/trainingSouls/create-item", packageData, { headers });
+        await axios.post(`http://54.251.220.228:8080/trainingSouls/create-item`, packageData, { headers });
       }
       navigate("/admin/training-packages");
     } catch (error) {
@@ -82,49 +88,80 @@ const PackageManagement = () => {
           <h2 className="text-primary text-center fw-bold">
             {isEditing ? "✏️ Chỉnh sửa" : "➕ Thêm mới"} Gói Tập
           </h2>
+          {errorMessage && <div className="alert alert-danger">{errorMessage}</div>} {/* Error message */}
           <form onSubmit={handleSubmit} className="d-flex flex-column gap-3">
-            {/* Nhập tên gói */}
-            <input
-              type="text"
-              className="form-control p-3"
-              placeholder="Tên gói"
-              value={packageData.name}
-              onChange={(e) => setPackageData({ ...packageData, name: e.target.value })}
-              required
-            />
-            
-            {/* Dropdown chọn giá */}
-            <select
-              className="form-control p-3"
-              value={packageData.price}
-              onChange={(e) => setPackageData({ ...packageData, price: e.target.value })}
-              required
-            >
-              <option value="">Chọn giá</option>
-              <option value="500000">500,000 VNĐ</option>
-              <option value="1000000">1,000,000 VNĐ</option>
-              <option value="1500000">1,500,000 VNĐ</option>
-              <option value="2000000">2,000,000 VNĐ</option>
-            </select>
+  {/* Nhập tên gói */}
+  <input
+    type="text"
+    className="form-control p-3"
+    placeholder="Tên gói"
+    value={packageData.name}
+    onChange={(e) => setPackageData({ ...packageData, name: e.target.value })}
+    required
+  />
 
-            {/* Dropdown chọn thời gian */}
-            <select
-              className="form-control p-3"
-              value={packageData.duration}
-              onChange={(e) => setPackageData({ ...packageData, duration: e.target.value })}
-              required
-            >
-              <option value="">Chọn thời gian</option>
-              <option value="30">30 ngày</option>
-              <option value="60">60 ngày</option>
-              <option value="90">90 ngày</option>
-              <option value="180">180 ngày</option>
-            </select>
+  {/* Dropdown chọn giá */}
+  <select
+    className="form-control p-3"
+    value={packageData.price}
+    onChange={(e) => setPackageData({ ...packageData, price: e.target.value })}
+    required
+  >
+    <option value="">Chọn giá</option>
+    <option value="500000">500,000 VNĐ</option>
+    <option value="1000000">1,000,000 VNĐ</option>
+    <option value="1500000">1,500,000 VNĐ</option>
+    <option value="2000000">2,000,000 VNĐ</option>
+  </select>
 
-            <button type="submit" className="btn btn-primary fw-bold">
-              {isEditing ? "✅ Cập nhật" : "📌 Thêm mới"}
-            </button>
-          </form>
+  {/* Dropdown chọn thời gian */}
+  <select
+    className="form-control p-3"
+    value={packageData.duration}
+    onChange={(e) => setPackageData({ ...packageData, duration: e.target.value })}
+    required
+  >
+    <option value="">Chọn thời gian</option>
+    <option value="30">30 ngày</option>
+    <option value="60">60 ngày</option>
+    <option value="90">90 ngày</option>
+    <option value="180">180 ngày</option>
+  </select>
+
+  {/* Điểm yêu cầu */}
+  <input
+    type="number"
+    className="form-control p-3"
+    placeholder="Điểm yêu cầu"
+    value={packageData.pointsRequired}
+    onChange={(e) => setPackageData({ ...packageData, pointsRequired: e.target.value })}
+    required
+  />
+
+  {/* Số lượng */}
+  <input
+    type="number"
+    className="form-control p-3"
+    placeholder="Số lượng"
+    value={packageData.quantity}
+    onChange={(e) => setPackageData({ ...packageData, quantity: e.target.value })}
+    required
+  />
+
+  {/* Mô tả */}
+  <textarea
+    className="form-control p-3"
+    placeholder="Mô tả (tùy chọn)"
+    value={packageData.description}
+    onChange={(e) => setPackageData({ ...packageData, description: e.target.value })}
+    rows="3"
+  />
+
+  <button type="submit" className="btn btn-primary fw-bold">
+    {isEditing ? "✅ Cập nhật" : "📌 Thêm mới"}
+  </button>
+</form>
+
         </div>
       ) : (
         <div>
@@ -150,30 +187,26 @@ const PackageManagement = () => {
                 <tbody>
                   {packages.length > 0 ? (
                     packages.map((pkg) => (
-                      <tr key={pkg.id} className="align-middle">
-                        <td>{pkg.id}</td>
-                        <td className="fw-semibold">{pkg.name}</td>
-                        <td>{pkg.price ? pkg.price.toLocaleString() + " VNĐ" : "Chưa có giá"}</td>
-                        <td>{pkg.duration} ngày</td>
-                        <td className="d-flex justify-content-center">
-                          <button
-                            className="btn btn-warning me-2 d-flex align-items-center"
-                            onClick={() => navigate(`/admin/training-packages/edit/${pkg.id}`)}
-                          >
-                            <FaEdit className="me-1" /> Sửa
+                      <tr key={pkg.itemId}>
+                        <td>{pkg.itemId}</td>
+                        <td>{pkg.name}</td>
+                        <td>{pkg.price.toLocaleString()} VNĐ</td>
+                        <td>{pkg.durationInDays} ngày</td>
+                        <td>{pkg.quantity}</td>
+                        <td>{pkg.pointsRequired}</td>
+                        <td>
+                          <button className="btn btn-warning me-2" onClick={() => navigate(`/admin/training-packages/edit/${pkg.itemId}`)}>
+                            <FaEdit /> Sửa
                           </button>
-                          <button
-                            className="btn btn-danger d-flex align-items-center"
-                            onClick={() => handleDelete(pkg.id)}
-                          >
-                            <FaTrash className="me-1" /> Xóa
+                          <button className="btn btn-danger" onClick={() => handleDelete(pkg.itemId)}>
+                            <FaTrash /> Xóa
                           </button>
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="5" className="text-center text-muted">Không có gói tập nào 😞</td>
+                      <td colSpan="7" className="text-muted">Không có gói tập nào.</td>
                     </tr>
                   )}
                 </tbody>
