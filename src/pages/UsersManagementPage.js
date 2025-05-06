@@ -7,6 +7,7 @@ import UserManagement from "../component/user/UserManagement";
 const UsersManagementPage = () => {
   return (
     <div>
+    
       <UserManagement />
     </div>
   );
