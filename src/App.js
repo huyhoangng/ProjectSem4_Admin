@@ -16,6 +16,7 @@ import ExercisePage from "./pages/ExercisePage";
 import IndexPage from "./pages/IndexPage";
 import RankPage from "./pages/RankPage";
 import Classes from "./pages/Classes";
+import PurchaseHistories from "./pages/PurchaseHistories";
 
 const RedirectToLogin = () => {
   const navigate = useNavigate();
@@ -49,6 +50,7 @@ const App = () => {
 <Route path="/dashboard" element={<IndexPage/>}/>
 <Route path="/yourRank" element={<RankPage/>}/>
 <Route path="/classes" element={<Classes/>}/>
+          <Route path="/purchaseHistory" element={<PurchaseHistories/>}/>
 
         </Route>
       </Routes>

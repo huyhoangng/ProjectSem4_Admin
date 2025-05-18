@@ -5,343 +5,371 @@ import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 // --- API Endpoint Constants ---
-const API_ITEMS_BASE_URL = "http://54.251.220.228:8080/trainingSouls/items";
-const API_CREATE_URL = "http://54.251.220.228:8080/trainingSouls/create-item";
-const API_UPDATE_URL_BASE = "http://54.251.220.228:8080/trainingSouls/update-item";
+// Đã được cập nhật theo yêu cầu mới của bạn
+const API_BASE_URL = "http://54.251.220.228:8080/trainingSouls";
+const API_ITEMS_URL = `${API_BASE_URL}/items`; // GET ALL, GET BY ID, DELETE
+const API_CREATE_ITEM_URL = `${API_BASE_URL}/create-item`; // POST - Tạo mới
+const API_UPDATE_ITEM_URL_BASE = `${API_BASE_URL}/update-item`; // PUT - Cập nhật
 
-// Lấy token từ sessionStorage
-const token = sessionStorage.getItem("token");
-const headers = {
-  Authorization: `Bearer ${token}`,
+
+// Lấy token từ sessionStorage một lần khi component được định nghĩa
+// Lưu ý: Nếu token thay đổi sau khi component mount, headers này sẽ không cập nhật.
+// Nếu token có thể thay đổi trong phiên làm việc, cần lấy token mới nhất trước mỗi request.
+const getToken = () => sessionStorage.getItem("token");
+
+const getHeaders = () => ({
+  Authorization: `Bearer ${getToken()}`,
   "Content-Type": "application/json",
-};
+});
 
-// Initial state for a new package
-const initialPackageData = {
+const initialItemData = {
   name: "",
-  price: "",
-  durationInDays: "",
-  pointsRequired: "",
-  quantity: "",
+  price: "", // Sẽ được chuyển thành number trước khi gửi
+  durationInDays: "", // Sẽ được chuyển thành number
+  pointsRequired: "", // Sẽ được chuyển thành number
+  quantity: "", // Sẽ được chuyển thành number
   description: "",
-  itemType: "SUBSCRIPTION"
+  itemType: "SUBSCRIPTION", // Mặc định là SUBSCRIPTION
+  itemId: null, // Để phân biệt item mới và item đang chỉnh sửa
 };
 
 
 const PackageManagement = () => {
-  const [packages, setPackages] = useState([]);
-  const [packageData, setPackageData] = useState(initialPackageData);
+  const [items, setItems] = useState([]);
+  const [itemData, setItemData] = useState(initialItemData);
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // Thêm trạng thái loading
   const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { id } = useParams(); // Lấy ID từ URL
   const location = useLocation();
 
+  // Fetch all items or a specific item based on URL
   useEffect(() => {
-    fetchPackages();
-
-    const isNewPath = location.pathname === "/admin/training-packages/new";
-    const hasId = !!id;
+    const currentPath = location.pathname;
+    const isNewPath = currentPath.endsWith("/new");
+    const editPathMatch = currentPath.match(/\/edit\/(\d+)$/); // Lấy ID từ /edit/:id
+    const editId = editPathMatch ? editPathMatch[1] : null;
 
     if (isNewPath) {
       setIsEditing(false);
-      setPackageData(initialPackageData);
+      setItemData(initialItemData);
       setErrorMessage("");
-    } else if (hasId) {
-       // Avoid refetching if already editing the same item
-       if (!isEditing || packageData.itemId?.toString() !== id) {
-          getPackageById(id);
-          setIsEditing(true);
-          setErrorMessage("");
-       }
+    } else if (editId) {
+      // Chỉ fetch nếu ID thay đổi hoặc chưa ở chế độ chỉnh sửa cho ID đó
+      if (!isEditing || itemData.itemId?.toString() !== editId) {
+        getItemById(editId); // Fetch item để chỉnh sửa
+        setIsEditing(true);
+      }
     } else {
-      // Reset form state if navigating back to the list view
-      if (isEditing) {
+      // Trang danh sách chính
+      fetchItems();
+      if (isEditing) { // Reset form nếu từ trang edit/new quay lại
           setIsEditing(false);
-          setPackageData(initialPackageData);
+          setItemData(initialItemData);
       }
     }
-  }, [id, location.pathname]); // Dependencies: fetch/reset based on ID and path
+  }, [location.pathname]); // Re-run khi URL thay đổi
 
-    const fetchPackages = async () => {
-        try {
-        const timestamp = Date.now(); // Cache buster
-        const response = await axios.get(`${API_ITEMS_BASE_URL}?_=${timestamp}`, { headers });
-        setPackages(response.data || []);
-        } catch (error) {
-        console.error("Lỗi khi lấy danh sách gói tập:", error);
-        setErrorMessage("Không thể tải danh sách gói tập.");
-        }
-    };
 
-  const getPackageById = async (packageId) => {
-    if (!packageId) return;
+  const fetchItems = async () => {
+    setIsLoading(true);
+    setErrorMessage("");
     try {
-      const response = await axios.get(`${API_ITEMS_BASE_URL}/${packageId}`, { headers });
-      setPackageData({
-          ...initialPackageData, // Ensure all fields are present
-          ...response.data
-      });
+      const timestamp = Date.now(); // Cache buster
+      const response = await axios.get(`${API_ITEMS_URL}?_=${timestamp}`, { headers: getHeaders() });
+      // API trả về mảng các items trực tiếp
+      setItems(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
-      console.error(`Lỗi khi lấy thông tin gói tập ID ${packageId}:`, error);
-      setErrorMessage(`Không thể tải thông tin chi tiết gói tập ID ${packageId}.`);
-      navigate("/admin/training-packages"); // Redirect if item not found
+      console.error("Lỗi khi lấy danh sách gói tập:", error);
+      setErrorMessage("Không thể tải danh sách gói tập. " + (error.response?.data?.message || error.message));
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleDelete = async (packageId) => {
-    if (!packageId) return;
-    if (window.confirm(`Bạn có chắc chắn muốn xóa gói tập ID ${packageId}?`)) {
+  const getItemById = async (itemId) => {
+    if (!itemId) return;
+    setIsLoading(true);
+    setErrorMessage("");
+    try {
+      const response = await axios.get(`${API_ITEMS_URL}/${itemId}`, { headers: getHeaders() });
+      // API trả về một object item
+      if (response.data) {
+        setItemData({
+          ...initialItemData, // Đảm bảo tất cả các trường đều có
+          ...response.data, // Ghi đè với dữ liệu từ API
+          // Chuyển đổi số về chuỗi cho input, API có thể trả về số
+          price: response.data.price?.toString() || "",
+          durationInDays: response.data.durationInDays?.toString() || "",
+          pointsRequired: response.data.pointsRequired?.toString() || "",
+          quantity: response.data.quantity?.toString() || "",
+        });
+        setIsEditing(true); // Chắc chắn đang ở chế độ edit
+      } else {
+        throw new Error("Không tìm thấy dữ liệu gói tập.");
+      }
+    } catch (error) {
+      console.error(`Lỗi khi lấy thông tin gói tập ID ${itemId}:`, error);
+      setErrorMessage(`Không thể tải thông tin chi tiết gói tập ID ${itemId}. ` + (error.response?.data?.message || error.message));
+      navigate("/admin/training-packages"); // Chuyển hướng nếu không tìm thấy
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (itemId) => {
+    if (!itemId) return;
+    if (window.confirm(`Bạn có chắc chắn muốn xóa gói tập ID ${itemId}? Thao tác này không thể hoàn tác.`)) {
+      setIsLoading(true);
+      setErrorMessage("");
       try {
-        await axios.delete(`${API_ITEMS_BASE_URL}/${packageId}`, { headers });
-        setErrorMessage(""); // Clear previous error
-        // Refetch packages *after* successful deletion
-        await fetchPackages();
-        // If the deleted item was the one being edited, navigate back
-        if (isEditing && id === packageId.toString()) {
+        // API DELETE sử dụng URL: /items/{id}
+        await axios.delete(`${API_ITEMS_URL}/${itemId}`, { headers: getHeaders() });
+        await fetchItems(); // Tải lại danh sách sau khi xóa
+        // Nếu item đang được edit bị xóa, quay lại trang danh sách
+        if (isEditing && itemData.itemId?.toString() === itemId.toString()) {
             navigate("/admin/training-packages");
         }
       } catch (error) {
-        console.error(`Lỗi khi xóa gói tập ID ${packageId}:`, error);
-        const backendError = error.response?.data?.message || "Xóa gói tập thất bại.";
-        setErrorMessage(backendError);
+        console.error(`Lỗi khi xóa gói tập ID ${itemId}:`, error);
+        setErrorMessage(`Xóa gói tập thất bại. ` + (error.response?.data?.message || error.message));
+      } finally {
+        setIsLoading(false);
       }
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Destructure for easier validation access
-    const { name, price, durationInDays, pointsRequired, quantity } = packageData;
+    const { name, price, durationInDays, pointsRequired, quantity, itemType } = itemData;
 
-    // Validation checks
-    if (!name || !price || !durationInDays || !pointsRequired || !quantity) {
+    // Validation
+    if (!name.trim() || !price || !durationInDays || !pointsRequired || !quantity) {
       setErrorMessage("Vui lòng điền đầy đủ các trường bắt buộc: Tên, Giá, Thời gian, Điểm yêu cầu, Số lượng.");
       return;
     }
-    if (Number(price) < 0 || Number(durationInDays) <= 0 || Number(pointsRequired) < 0 || Number(quantity) < 0) {
-        setErrorMessage("Giá, Thời gian, Điểm yêu cầu, và Số lượng không được là số âm. Thời gian phải lớn hơn 0.");
+    const numPrice = Number(price);
+    const numDuration = Number(durationInDays);
+    const numPoints = Number(pointsRequired);
+    const numQuantity = Number(quantity);
+
+    if (isNaN(numPrice) || numPrice < 0 || isNaN(numDuration) || numDuration <= 0 || isNaN(numPoints) || numPoints < 0 || isNaN(numQuantity) || numQuantity < 0) {
+        setErrorMessage("Giá, Thời gian, Điểm yêu cầu, và Số lượng phải là số hợp lệ. Thời gian phải lớn hơn 0. Các giá trị khác không được âm.");
         return;
     }
-    setErrorMessage(""); // Clear error message if validation passes
+    setErrorMessage("");
+    setIsLoading(true);
 
-    // Prepare payload, ensure numeric types
     const payload = {
-        ...packageData,
-        price: Number(price),
-        durationInDays: Number(durationInDays),
-        pointsRequired: Number(pointsRequired),
-        quantity: Number(quantity),
-        itemType: packageData.itemType || "SUBSCRIPTION" // Ensure itemType
+        name: name.trim(),
+        price: numPrice,
+        durationInDays: numDuration,
+        pointsRequired: numPoints,
+        quantity: numQuantity,
+        description: itemData.description?.trim() || "", // Đảm bảo description là chuỗi
+        itemType: itemType || "SUBSCRIPTION", // Mặc định itemType
     };
 
-    // Remove itemId for CREATE operation
-    if (!isEditing) {
-        delete payload.itemId;
-    }
-
     try {
-        // Determine API call based on mode (editing vs. creating)
-        if (isEditing && id) {
-            await axios.put(`${API_UPDATE_URL_BASE}/${id}`, payload, { headers });
-        } else {
-            await axios.post(API_CREATE_URL, payload, { headers });
-        }
-        // On success: fetch updated list and navigate back
-        await fetchPackages();
-        navigate("/admin/training-packages");
-
+      if (isEditing && itemData.itemId) {
+        // API UPDATE sử dụng URL: /update-item/{id}
+        await axios.put(`${API_UPDATE_ITEM_URL_BASE}/${itemData.itemId}`, payload, { headers: getHeaders() });
+      } else {
+        // API CREATE sử dụng URL: /create-item
+        // Không cần truyền ID cho API create-item này
+        await axios.post(API_CREATE_ITEM_URL, payload, { headers: getHeaders() });
+      }
+      // await fetchItems(); // Không cần fetch lại nếu navigate ngay
+      navigate("/admin/training-packages"); // Chuyển về trang danh sách
     } catch (error) {
-        console.error("Lỗi khi lưu gói tập:", error.response || error);
-        let specificError = "Lưu gói tập thất bại. Vui lòng thử lại.";
-        // Extract backend error message if available
-        if (error.response && error.response.data) {
-            if (typeof error.response.data.message === 'string') {
-                specificError = error.response.data.message;
-            } else if (typeof error.response.data === 'string') {
-                 specificError = error.response.data;
-            } else if (error.response.status === 400) {
-                 specificError = "Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.";
-            } else if (error.response.status === 401 || error.response.status === 403) {
-                 specificError = "Bạn không có quyền thực hiện hành động này.";
-            }
-        } else if (error.request) {
-             specificError = "Không nhận được phản hồi từ máy chủ.";
-        } else if (error.message) {
-            specificError = error.message;
-        }
-        setErrorMessage(specificError);
+      console.error("Lỗi khi lưu gói tập:", error.response || error);
+      let specificError = "Lưu gói tập thất bại. Vui lòng thử lại.";
+      if (error.response && error.response.data) {
+        specificError = error.response.data.message || (typeof error.response.data === 'string' ? error.response.data : specificError);
+      } else if (error.message) {
+        specificError = error.message;
+      }
+      setErrorMessage(specificError);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // --- Render Logic ---
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setItemData(prev => ({ ...prev, [name]: value }));
+  };
+
 
   const renderForm = () => (
-    // Form styling remains the same
     <div className="card shadow-sm border-0 p-lg-5 p-4">
       <h2 className="text-primary text-center fw-bold mb-4">
         {isEditing ? "✏️ Chỉnh sửa Gói Tập" : "➕ Thêm Gói Tập Mới"}
       </h2>
-      {errorMessage && <div className="alert alert-danger alert-dismissible fade show" role="alert">
-         {errorMessage}
-         <button type="button" className="btn-close" onClick={() => setErrorMessage("")} aria-label="Close"></button>
-        </div>}
+      {errorMessage && (
+        <div className="alert alert-danger alert-dismissible fade show" role="alert">
+          {errorMessage}
+          <button type="button" className="btn-close" onClick={() => setErrorMessage("")} aria-label="Close"></button>
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="d-flex flex-column gap-3">
-        {/* Floating Labels for Inputs/Selects */}
         <div className="form-floating">
-            <input type="text" className="form-control" id="packageName" placeholder="Tên gói" value={packageData.name} onChange={(e) => setPackageData({ ...packageData, name: e.target.value })} required />
-            <label htmlFor="packageName">Tên gói *</label>
+            <input type="text" className="form-control" id="itemName" name="name" placeholder="Tên gói" value={itemData.name} onChange={handleInputChange} required />
+            <label htmlFor="itemName">Tên gói *</label>
         </div>
          <div className="form-floating">
-            <select className="form-select" id="packagePrice" value={packageData.price} onChange={(e) => setPackageData({ ...packageData, price: e.target.value })} required>
-                <option value="" disabled>Chọn giá...</option>
-                <option value="500000">500,000 VNĐ</option>
-                <option value="1000000">1,000,000 VNĐ</option>
-                <option value="1500000">1,500,000 VNĐ</option>
-                <option value="2000000">2,000,000 VNĐ</option>
-                {/* Dynamic option for existing non-standard price */}
-                {isEditing && packageData.price && ![500000, 1000000, 1500000, 2000000].includes(Number(packageData.price)) && (
-                    <option value={packageData.price}>{Number(packageData.price).toLocaleString('vi-VN')} VNĐ (Hiện tại)</option>
-                )}
+            <input type="number" className="form-control" id="itemPrice" name="price" placeholder="Giá (VNĐ)" value={itemData.price} onChange={handleInputChange} required min="0" />
+            <label htmlFor="itemPrice">Giá (VNĐ) *</label>
+        </div>
+        <div className="form-floating">
+            <input type="number" className="form-control" id="itemDuration" name="durationInDays" placeholder="Thời gian (ngày)" value={itemData.durationInDays} onChange={handleInputChange} required min="1" />
+            <label htmlFor="itemDuration">Thời gian (ngày) *</label>
+        </div>
+        <div className="form-floating">
+            <input type="number" className="form-control" id="itemPoints" name="pointsRequired" placeholder="Điểm yêu cầu" value={itemData.pointsRequired} onChange={handleInputChange} required min="0" />
+            <label htmlFor="itemPoints">Điểm yêu cầu *</label>
+        </div>
+        <div className="form-floating">
+            <input type="number" className="form-control" id="itemQuantity" name="quantity" placeholder="Số lượng" value={itemData.quantity} onChange={handleInputChange} required min="0" />
+            <label htmlFor="itemQuantity">Số lượng *</label>
+        </div>
+        <div className="form-floating">
+            <textarea className="form-control" id="itemDescription" name="description" placeholder="Mô tả" value={itemData.description || ''} onChange={handleInputChange} rows="4" style={{ height: '100px' }} />
+            <label htmlFor="itemDescription">Mô tả (tùy chọn)</label>
+        </div>
+        <div className="form-floating">
+            <select className="form-select" id="itemType" name="itemType" value={itemData.itemType} onChange={handleInputChange} required>
+                <option value="SUBSCRIPTION">Gói Đăng Ký (Subscription)</option>
+                <option value="PRODUCT">Sản Phẩm (Product)</option>
+           
             </select>
-             <label htmlFor="packagePrice">Giá *</label>
+            <label htmlFor="itemType">Loại Item *</label>
         </div>
-        <div className="form-floating">
-            <select className="form-select" id="packageDuration" value={packageData.durationInDays} onChange={(e) => setPackageData({ ...packageData, durationInDays: e.target.value })} required >
-                <option value="" disabled>Chọn thời gian...</option>
-                <option value="30">30 ngày</option>
-                <option value="60">60 ngày</option>
-                <option value="90">90 ngày</option>
-                <option value="180">180 ngày</option>
-                 {/* Dynamic option for existing non-standard duration */}
-                {isEditing && packageData.durationInDays && ![30, 60, 90, 180].includes(Number(packageData.durationInDays)) && (
-                    <option value={packageData.durationInDays}>{packageData.durationInDays} ngày (Hiện tại)</option>
-                )}
-            </select>
-            <label htmlFor="packageDuration">Thời gian (ngày) *</label>
-        </div>
-        <div className="form-floating">
-            <input type="number" className="form-control" id="packagePoints" placeholder="Điểm yêu cầu" value={packageData.pointsRequired} onChange={(e) => setPackageData({ ...packageData, pointsRequired: e.target.value })} required min="0" />
-            <label htmlFor="packagePoints">Điểm yêu cầu *</label>
-        </div>
-        <div className="form-floating">
-            <input type="number" className="form-control" id="packageQuantity" placeholder="Số lượng" value={packageData.quantity} onChange={(e) => setPackageData({ ...packageData, quantity: e.target.value })} required min="0" />
-            <label htmlFor="packageQuantity">Số lượng *</label>
-        </div>
-        <div className="form-floating">
-            <textarea className="form-control" id="packageDescription" placeholder="Mô tả" value={packageData.description || ''} onChange={(e) => setPackageData({ ...packageData, description: e.target.value })} rows="4" style={{ height: '100px' }} />
-            <label htmlFor="packageDescription">Mô tả (tùy chọn)</label>
-        </div>
-        {/* Action Buttons */}
+
         <div className="d-grid gap-2 d-sm-flex justify-content-sm-end mt-3">
-             <button type="button" className="btn btn-outline-secondary fw-bold px-4" onClick={() => navigate("/admin/training-packages")}> Hủy bỏ </button>
-            <button type="submit" className="btn btn-primary fw-bold px-4"> {isEditing ? "✅ Cập nhật" : "➕ Thêm mới"} </button>
+            <button type="button" className="btn btn-outline-secondary fw-bold px-4" onClick={() => navigate("/admin/training-packages")} disabled={isLoading}> Hủy bỏ </button>
+            <button type="submit" className="btn btn-primary fw-bold px-4" disabled={isLoading}>
+                {isLoading ? (
+                    <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Đang {isEditing ? "cập nhật..." : "thêm..."}
+                    </>
+                ) : (isEditing ? "✅ Cập nhật" : "➕ Thêm mới")}
+            </button>
         </div>
       </form>
     </div>
   );
 
-  // Table View (listing packages) - UPDATED HEADER STYLING
+
   const renderTable = () => (
     <div>
-      {/* Header section: Title and Add Button */}
       <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
         <h2 className="text-primary fw-bold mb-0">📦 Quản lý Gói Tập</h2>
         <button
           className="btn btn-primary d-flex align-items-center shadow-sm"
           onClick={() => navigate("/admin/training-packages/new")}
+          disabled={isLoading}
         >
           <FaPlus className="me-2" /> Thêm gói mới
         </button>
       </div>
-      {/* Error message display */}
-       {errorMessage && <div className="alert alert-danger alert-dismissible fade show" role="alert">
+       {errorMessage && !isEditing && ( // Chỉ hiển thị lỗi của bảng nếu không ở form
+        <div className="alert alert-danger alert-dismissible fade show" role="alert">
           {errorMessage}
           <button type="button" className="btn-close" onClick={() => setErrorMessage("")} aria-label="Close"></button>
-        </div>}
-      {/* Card container for the table */}
-      <div className="card shadow-sm border-light rounded-3 overflow-hidden">
-          <div className="table-responsive">
-            <table className="table table-striped table-hover align-middle mb-0">
-              {/* Table Header: Light blue background, centered, bold, larger text */}
-              <thead style={{ backgroundColor: '#e7f1ff' }}> {/* Light blue background */}
-                <tr>
-                  {/* Header Cells (<th>): Centered, Semibold, Padded, Larger Font */}
-                  <th scope="col" className="text-center fw-semibold py-3 fs-6">ID</th>
-                  <th scope="col" className="text-center fw-semibold py-3 fs-6">Tên</th> {/* Centered */}
-                  <th scope="col" className="text-center text-nowrap fw-semibold py-3 fs-6">Giá (VNĐ)</th>
-                  <th scope="col" className="text-center fw-semibold py-3 fs-6">Thời gian (ngày)</th>
-                  <th scope="col" className="text-center fw-semibold py-3 fs-6">Số lượng</th>
-                  <th scope="col" className="text-center fw-semibold py-3 fs-6">Điểm yêu cầu</th>
-                  <th scope="col" className="text-center fw-semibold py-3 fs-6" style={{minWidth: '120px'}}>Mô tả</th> {/* Centered */}
-                  <th scope="col" className="text-center fw-semibold py-3 fs-6" style={{minWidth: '100px'}}>Hành động</th>
-                </tr>
-              </thead>
-              {/* Table Body */}
-              <tbody>
-                {packages.length > 0 ? (
-                  // Map through packages to create rows
-                  packages.map((pkg) => (
-                    <tr key={pkg.itemId}>
-                      {/* Data Cells (<td>) - Align with header or as appropriate */}
-                      <td className="text-center">{pkg.itemId}</td>
-                      <td className="text-start">{pkg.name || "-"}</td> {/* Keep name left-aligned */}
-                      <td className="text-center text-nowrap">
-                        {(pkg.price ?? 0).toLocaleString('vi-VN')}
-                      </td>
-                      <td className="text-center">{pkg.durationInDays ?? "-"}</td>
-                      <td className="text-center">{pkg.quantity ?? "-"}</td>
-                      <td className="text-center">{pkg.pointsRequired ?? "-"}</td>
-                       {/* Keep description left-aligned with ellipsis */}
-                      <td className="text-start" title={pkg.description || ''}>
-                          <div style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {pkg.description || "-"}
-                          </div>
-                      </td>
-                      {/* Action buttons cell */}
-                      <td className="text-center">
+        </div>
+       )}
+      {isLoading && items.length === 0 && ( // Hiển thị loading khi đang fetch và chưa có data
+        <div className="text-center my-5">
+            <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+            </div>
+            <p className="mt-2">Đang tải dữ liệu...</p>
+        </div>
+      )}
+      {!isLoading && items.length === 0 && ( // Hiển thị khi không loading và không có data
+        <div className="alert alert-info text-center">
+          Chưa có gói tập nào.
+          <a href="#" onClick={(e) => {e.preventDefault(); navigate("/admin/training-packages/new");}} className="ms-2 link-primary">Thêm gói mới?</a>
+        </div>
+      )}
+      {items.length > 0 && (
+          <div className="card shadow-sm border-light rounded-3 overflow-hidden">
+            <div className="table-responsive">
+                <table className="table table-striped table-hover align-middle mb-0">
+                <thead style={{ backgroundColor: '#e7f1ff' }}>
+                    <tr>
+                    <th scope="col" className="text-center fw-semibold py-3 fs-6">ID</th>
+                    <th scope="col" className="text-start fw-semibold py-3 fs-6">Tên</th>
+                    <th scope="col" className="text-center text-nowrap fw-semibold py-3 fs-6">Giá (VNĐ)</th>
+                    <th scope="col" className="text-center fw-semibold py-3 fs-6">Thời gian (ngày)</th>
+                    <th scope="col" className="text-center fw-semibold py-3 fs-6">Số lượng</th>
+                    <th scope="col" className="text-center fw-semibold py-3 fs-6">Điểm yêu cầu</th>
+                    <th scope="col" className="text-start fw-semibold py-3 fs-6" style={{minWidth: '150px'}}>Mô tả</th>
+                    <th scope="col" className="text-center fw-semibold py-3 fs-6">Loại</th>
+                    <th scope="col" className="text-center fw-semibold py-3 fs-6" style={{minWidth: '100px'}}>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {items.map((item) => (
+                    <tr key={item.itemId}>
+                        <td className="text-center">{item.itemId}</td>
+                        <td className="text-start">{item.name || "-"}</td>
+                        <td className="text-center text-nowrap">
+                        {(item.price ?? 0).toLocaleString('vi-VN')}
+                        </td>
+                        <td className="text-center">{item.durationInDays ?? "-"}</td>
+                        <td className="text-center">{item.quantity ?? "-"}</td>
+                        <td className="text-center">{item.pointsRequired ?? "-"}</td>
+                        <td className="text-start" title={item.description || ''}>
+                            <div style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {item.description || "-"}
+                            </div>
+                        </td>
+                        <td className="text-center">
+                            <span className={`badge ${item.itemType === 'SUBSCRIPTION' ? 'bg-info' : 'bg-secondary'}`}>
+                                {item.itemType || "N/A"}
+                            </span>
+                        </td>
+                        <td className="text-center">
                         <div className="d-flex justify-content-center gap-2">
-                            {/* Edit Button */}
                             <button
-                                className="btn btn-sm btn-outline-primary border-0" // Borderless outline
-                                onClick={() => navigate(`/admin/training-packages/edit/${pkg.itemId}`)}
+                                className="btn btn-sm btn-outline-warning border-0"
+                                onClick={() => navigate(`/admin/training-packages/edit/${item.itemId}`)}
                                 title="Sửa gói tập"
+                                disabled={isLoading}
                             >
                             <FaEdit />
                             </button>
-                            {/* Delete Button */}
                             <button
-                                className="btn btn-sm btn-outline-danger border-0" // Borderless outline
-                                onClick={() => handleDelete(pkg.itemId)}
+                                className="btn btn-sm btn-outline-danger border-0"
+                                onClick={() => handleDelete(item.itemId)}
                                 title="Xóa gói tập"
+                                disabled={isLoading}
                             >
                             <FaTrash />
                             </button>
                         </div>
-                      </td>
+                        </td>
                     </tr>
-                  ))
-                ) : (
-                  // Row displayed when no packages are found
-                  <tr>
-                    <td colSpan="8" className="text-center text-muted p-4">
-                      Chưa có gói tập nào.
-                       {/* Link to add new package */}
-                       <a href="#" onClick={(e) => {e.preventDefault(); navigate("/admin/training-packages/new");}} className="ms-2 link-primary">Thêm gói mới?</a>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-      </div>
+                    ))}
+                </tbody>
+                </table>
+            </div>
+        </div>
+      )}
     </div>
   );
 
-  // Main component return: Render either Form or Table based on state/route
+  // Determine view based on URL path (new, edit, or list)
+  const currentPath = location.pathname;
+  const showForm = currentPath.endsWith("/new") || currentPath.includes("/edit/");
+
   return (
     <div className="container my-4">
-        {location.pathname === "/admin/training-packages/new" || isEditing ? renderForm() : renderTable()}
+        {showForm ? renderForm() : renderTable()}
     </div>
   );
 };

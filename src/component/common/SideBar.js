@@ -20,7 +20,9 @@ const Sidebar = () => {
       {/* Sidebar - Brand */}
       <Link className="sidebar-brand d-flex align-items-center justify-content-center" to="/">
         <div className="sidebar-brand-icon rotate-n-15">
-          <GiMuscleUp /> {/* Icon tay cơ bắp */}
+        <span style={{ fontSize: '40px', color: 'white' }}>
+        <GiMuscleUp />
+      </span>
         </div>
         <div className="sidebar-brand-text mx-3">Training Soul</div>
       </Link>
@@ -31,7 +33,7 @@ const Sidebar = () => {
       <li className="nav-item active">
         <Link className="nav-link" to="/dashboard">
           <FaTachometerAlt />
-          <span> Dashboard</span>
+          <span> Trang chủ</span>
         </Link>
       </li>
 
@@ -41,13 +43,13 @@ const Sidebar = () => {
       <li className="nav-item">
         <a className="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseComponents">
           <FaCog />
-          <span> User Management</span>
+          <span> Quản lý khách hàng</span>
         </a>
         <div id="collapseComponents" className="collapse">
           <div className="bg-white py-2 collapse-inner rounded">
-            <h6 className="collapse-header">Custom User:</h6>
-            <Link className="collapse-item" to="/usermanagement">Account User</Link>
-            <Link className="collapse-item" to="/cards">Cards</Link>
+            <h6 className="collapse-header">Khách hàng:</h6>
+            <Link className="collapse-item" to="/usermanagement">Tài khoản người dùng</Link>
+            <Link className="collapse-item" to="/purchaseHistory">Lịch sử mua hàng</Link>
           </div>
         </div>
       </li>
@@ -56,13 +58,13 @@ const Sidebar = () => {
       <li className="nav-item">
         <a className="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUtilities">
           <FaWrench />
-          <span> Packages</span>
+          <span> Gói</span>
         </a>
         <div id="collapseUtilities" className="collapse">
           <div className="bg-white py-2 collapse-inner rounded">
-            <h6 className="collapse-header">Custom package:</h6>
-            <Link className="collapse-item" to="/packages">PackageList</Link>
-            <Link className="collapse-item" to="/utilities-border">Challenger</Link>
+            <h6 className="collapse-header">Gói người dùng:</h6>
+            <Link className="collapse-item" to="/packages">Danh sách sản phẩm</Link>
+            {/* <Link className="collapse-item" to="/utilities-border">Challenger</Link> */}
           </div>
         </div>
       </li>
@@ -73,13 +75,13 @@ const Sidebar = () => {
       <li className="nav-item">
         <a className="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePages">
           <FaFolder />
-          <span> Pages</span>
+          <span> Trang</span>
         </a>
         <div id="collapsePages" className="collapse">
           <div className="bg-white py-2 collapse-inner rounded">
-            <h6 className="collapse-header">Posts Screens:</h6>
-            <Link className="collapse-item" to="/posts">All Post</Link>
-            <Link className="collapse-item" to="/classes">Classes</Link>
+            <h6 className="collapse-header">Bài viết:</h6>
+            <Link className="collapse-item" to="/posts">Bài viết</Link>
+            {/* <Link className="collapse-item" to="/classes">Classes</Link> */}
           </div>
         </div>
       </li>
@@ -88,23 +90,23 @@ const Sidebar = () => {
       <li className="nav-item">
         <Link className="nav-link" to="/yourRank">
           <FaChartArea />
-          <span> Rank </span>
+          <span> Phân hạng </span>
         </Link>
       </li>
 
-      {/* Workout */}
+      {/* Workout
       <li className="nav-item">
         <Link className="nav-link" to="/exercise">
-          <FaDumbbell /> {/* Icon Workout */}
-          <span> Workout </span>
+          <FaDumbbell />
+          <span> Bài tập </span>
         </Link>
-      </li>
+      </li> */}
 
       {/* Admin Management */}
       <li className="nav-item">
         <Link className="nav-link" to="/adminmanager">
           <FaTable />
-          <span> Admin Management</span>
+          <span> Quản lý quản trị viên</span>
         </Link>
       </li>
 
