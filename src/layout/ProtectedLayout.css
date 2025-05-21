@@ -1,0 +1,60 @@
+/* Layout.css hoặc file CSS tương tự */
+
+.layout-container {
+  display: flex;
+  flex-direction: column; /* Topbar (nếu có) ở trên, rồi content và footer */
+  min-height: 100vh;    /* Đảm bảo layout chiếm toàn bộ chiều cao màn hình */
+}
+
+.layout-content {
+  display: flex;
+  flex-grow: 1;         /* Cho phép phần content này mở rộng để chiếm không gian còn lại */
+  position: relative;   /* Cần thiết để định vị Footer đúng cách nếu Footer không fixed */
+  overflow: hidden;     /* Quan trọng: Ngăn cuộn ở cấp độ này nếu Sidebar fixed */
+}
+
+.sidebar { /* Thêm class 'sidebar' cho component Sidebar của bạn */
+  width: 250px; /* Hoặc chiều rộng mong muốn */
+  background-color: #f8f9fa; /* Màu nền ví dụ */
+  position: fixed; /* Đứng im */
+  left: 0;
+  top: 0; /* Nếu không có Topbar. Nếu có Topbar, top sẽ là chiều cao của Topbar */
+  bottom: 0; /* Kéo dài xuống dưới */
+  overflow-y: auto; /* Cho phép cuộn nội dung của sidebar nếu nó dài */
+  z-index: 1000; /* Đảm bảo sidebar ở trên các phần tử khác */
+  border-right: 1px solid #dee2e6; /* Đường viền ví dụ */
+  /* Cân nhắc thêm padding cho nội dung bên trong sidebar */
+  padding-top: 30px; /* Ví dụ: Nếu Topbar cao 60px */
+}
+
+.main-content {
+  flex-grow: 1;
+  /* Quan trọng: Đẩy nội dung sang phải để không bị Sidebar che */
+  margin-left: 250px; /* Phải bằng với width của .sidebar */
+  overflow-y: auto;   /* Chỉ cho phép cuộn ở phần main content */
+  padding: 20px;      /* Padding cho nội dung */
+  /* Nếu có Topbar fixed, thêm padding-top cho main-content */
+  padding-top: 80px; /* Ví dụ: 60px (Topbar) + 20px (padding) */
+  /* Nếu có Footer fixed, thêm padding-bottom cho main-content */
+  padding-bottom: 80px; /* Ví dụ: 60px (Footer) + 20px (padding) */
+}
+
+.site-footer { /* Thêm class 'site-footer' cho component Footer của bạn */
+  background-color: #343a40; /* Màu nền ví dụ */
+  color: white;
+  padding: 15px 0;
+  text-align: center;
+  position: fixed;    /* Đứng im */
+  left: 0;            /* Kéo dài toàn bộ chiều rộng */
+  right: 0;
+  bottom: 0;
+  z-index: 1000;      /* Đảm bảo footer ở trên */
+  /* Nếu có Sidebar, Footer nên bắt đầu từ sau Sidebar */
+  /* Cách 1: Dùng margin-left (nếu sidebar luôn cố định chiều rộng) */
+  margin-left: 250px; /* Phải bằng với width của .sidebar */
+  /* Cách 2 (phức tạp hơn): Tính toán bằng JS hoặc dùng Grid/Flexbox phức tạp hơn
+     nếu chiều rộng sidebar có thể thay đổi. Với position:fixed, margin-left là đơn giản nhất.
+     Hoặc, nếu bạn muốn footer cũng nằm dưới sidebar, thì không cần margin-left này. */
+}
+
+/* Nếu bạn có Topbar và muốn nó cũng fixed */

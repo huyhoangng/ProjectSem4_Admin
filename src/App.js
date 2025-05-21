@@ -17,6 +17,7 @@ import IndexPage from "./pages/IndexPage";
 import RankPage from "./pages/RankPage";
 import Classes from "./pages/Classes";
 import PurchaseHistories from "./pages/PurchaseHistories";
+import BankPurchaseHistory from "./component/purchase/BackPurchaseHistory";
 
 const RedirectToLogin = () => {
   const navigate = useNavigate();
@@ -44,14 +45,14 @@ const App = () => {
           <Route path="/posts" element={<PostPage />} />
           <Route path="/usermanagement" element={<UsersManagementPage />} />
           <Route path="/admin/training-packages" element={<PackageManagement/>} />
-<Route path="/admin/training-packages/new" element={<PackageManagement />} />
-<Route path="/admin/training-packages/edit/:id" element={<PackageManagement />} />
-<Route path="/exercise" element={<ExercisePage/>}/>
-<Route path="/dashboard" element={<IndexPage/>}/>
-<Route path="/yourRank" element={<RankPage/>}/>
-<Route path="/classes" element={<Classes/>}/>
+          <Route path="/admin/training-packages/new" element={<PackageManagement />} />
+          <Route path="/admin/training-packages/edit/:id" element={<PackageManagement />} />
+          <Route path="/exercise" element={<ExercisePage/>}/>
+          <Route path="/dashboard" element={<IndexPage/>}/>
+          <Route path="/yourRank" element={<RankPage/>}/>
+          <Route path="/classes" element={<Classes/>}/>
           <Route path="/purchaseHistory" element={<PurchaseHistories/>}/>
-
+          <Route path="/bankPurchaseHistory" element={<BankPurchaseHistory/>}/>
         </Route>
       </Routes>
     </Router>

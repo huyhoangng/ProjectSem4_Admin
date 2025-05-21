@@ -336,7 +336,7 @@ const PackageManagement = () => {
                         <td className="text-center">
                         <div className="d-flex justify-content-center gap-2">
                             <button
-                                className="btn btn-sm btn-outline-warning border-0"
+                                className="btn btn-sm btn-outline-warningA border-0"
                                 onClick={() => navigate(`/admin/training-packages/edit/${item.itemId}`)}
                                 title="Sửa gói tập"
                                 disabled={isLoading}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Table, Button, Form, Container, Card, Alert, Spinner, Badge } from 'react-bootstrap';
-import { BsSearch, BsXCircleFill, BsCalendarRange, BsTrashFill, BsInfoCircleFill, BsPersonFill, BsArrowUpCircleFill, BsArrowDownCircleFill } from 'react-icons/bs';
+import { BsSearch, BsXCircleFill, BsCalendarRange, BsTrashFill, BsInfoCircleFill, BsPersonFill, BsBoxFill } from 'react-icons/bs';
 
 // Helper function to format transaction status
 const formatStatus = (status) => {
@@ -21,20 +21,24 @@ const formatStatus = (status) => {
     }
 };
 
-// Helper function to format transaction type
-const formatTransactionType = (type) => {
-    const upperType = type?.toUpperCase();
-    switch (upperType) {
-        case 'EARN':
-            return <Badge bg="success"><BsArrowUpCircleFill className="me-1" />Nhận điểm</Badge>;
-        case 'SPEND':
-            return <Badge bg="danger"><BsArrowDownCircleFill className="me-1" />Tiêu điểm</Badge>;
+// Helper function to format payment method
+const formatPaymentMethod = (method) => {
+    const upperMethod = method?.toUpperCase();
+    switch (upperMethod) {
+        case 'VNPAY':
+            return <Badge bg="primary">VNPAY</Badge>;
+        case 'BANK_TRANSFER':
+            return <Badge bg="info">Chuyển khoản</Badge>;
+        case 'CREDIT_CARD':
+            return <Badge bg="info">Thẻ tín dụng</Badge>;
+        case 'DEBIT_CARD':
+            return <Badge bg="info">Thẻ ghi nợ</Badge>;
         default:
-            return <Badge bg="secondary">{type || 'N/A'}</Badge>;
+            return <Badge bg="secondary">{method || 'N/A'}</Badge>;
     }
 };
 
-const PurchaseHistory = () => {
+const BankPurchaseHistory = () => {
     const [allTransactions, setAllTransactions] = useState([]);
     const [filteredTransactions, setFilteredTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -46,7 +50,6 @@ const PurchaseHistory = () => {
     const [searchStartDate, setSearchStartDate] = useState('');
     const [searchEndDate, setSearchEndDate] = useState('');
     const [searchUser, setSearchUser] = useState('');
-    const [searchType, setSearchType] = useState('');
 
     // Fetch transactions
     const fetchTransactions = async () => {
@@ -55,29 +58,21 @@ const PurchaseHistory = () => {
         const token = sessionStorage.getItem('token');
 
         if (!token) {
-            setError('Không tìm thấy token xác thực. Vui lòng đăng nhập lại.');
+            setError('Không tìm thấy token xác thực.');
             setLoading(false);
             return;
         }
 
         try {
             const response = await axios.get(
-                'http://54.251.220.228:8080/trainingSouls/PointsTransaction',
+                'http://54.251.220.228:8080/trainingSouls/PurchaseTransaction',
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
+                        'Content-Type': 'application/json'
                     }
                 }
             );
-
-            if (response.status === 404) {
-                setError('Không tìm thấy dữ liệu giao dịch điểm.');
-                setAllTransactions([]);
-                setFilteredTransactions([]);
-                return;
-            }
 
             const transactions = Array.isArray(response.data) ? response.data : [];
             const sortedTransactions = transactions.sort((a, b) => {
@@ -89,28 +84,8 @@ const PurchaseHistory = () => {
             setAllTransactions(sortedTransactions);
             setFilteredTransactions(sortedTransactions);
         } catch (err) {
-            console.error('Lỗi khi lấy lịch sử giao dịch điểm:', err);
-            if (err.response) {
-                switch (err.response.status) {
-                    case 404:
-                        setError('Không tìm thấy dữ liệu giao dịch điểm.');
-                        break;
-                    case 401:
-                        setError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
-                        break;
-                    case 403:
-                        setError('Bạn không có quyền truy cập dữ liệu này.');
-                        break;
-                    default:
-                        setError(err.response.data?.message || 'Lỗi khi tải lịch sử giao dịch điểm.');
-                }
-            } else if (err.request) {
-                setError('Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.');
-            } else {
-                setError('Đã xảy ra lỗi không xác định.');
-            }
-            setAllTransactions([]);
-            setFilteredTransactions([]);
+            console.error('Lỗi khi lấy lịch sử giao dịch:', err);
+            setError(err.response?.data?.message || err.message || 'Lỗi khi tải lịch sử giao dịch.');
         } finally {
             setLoading(false);
         }
@@ -118,7 +93,7 @@ const PurchaseHistory = () => {
 
     // Delete transaction
     const handleDeleteTransaction = async (transactionId) => {
-        if (!window.confirm(`Bạn có chắc chắn muốn xóa giao dịch điểm ID: ${transactionId}?`)) {
+        if (!window.confirm(`Bạn có chắc chắn muốn xóa giao dịch ID: ${transactionId}?`)) {
             return;
         }
 
@@ -126,44 +101,19 @@ const PurchaseHistory = () => {
         const token = sessionStorage.getItem('token');
 
         try {
-            const response = await axios.delete(
-                `http://54.251.220.228:8080/trainingSouls/PointsTransaction/${transactionId}`,
+            await axios.delete(
+                `http://54.251.220.228:8080/trainingSouls/PurchaseTransaction/${transactionId}`,
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
+                        'Content-Type': 'application/json'
                     }
                 }
             );
-
-            if (response.status === 404) {
-                setError('Không tìm thấy giao dịch điểm cần xóa.');
-                return;
-            }
-
             await fetchTransactions(); // Refresh the list
         } catch (err) {
-            console.error('Lỗi khi xóa giao dịch điểm:', err);
-            if (err.response) {
-                switch (err.response.status) {
-                    case 404:
-                        setError('Không tìm thấy giao dịch điểm cần xóa.');
-                        break;
-                    case 401:
-                        setError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
-                        break;
-                    case 403:
-                        setError('Bạn không có quyền xóa giao dịch điểm này.');
-                        break;
-                    default:
-                        setError(err.response.data?.message || 'Lỗi khi xóa giao dịch điểm.');
-                }
-            } else if (err.request) {
-                setError('Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.');
-            } else {
-                setError('Đã xảy ra lỗi không xác định.');
-            }
+            console.error('Lỗi khi xóa giao dịch:', err);
+            setError(err.response?.data?.message || err.message || 'Lỗi khi xóa giao dịch.');
         } finally {
             setDeleting(false);
         }
@@ -183,12 +133,6 @@ const PurchaseHistory = () => {
             filtered = filtered.filter(item =>
                 item.user?.name?.toLowerCase().includes(searchUser.trim().toLowerCase()) ||
                 item.user?.email?.toLowerCase().includes(searchUser.trim().toLowerCase())
-            );
-        }
-
-        if (searchType) {
-            filtered = filtered.filter(item =>
-                item.type?.toUpperCase() === searchType.toUpperCase()
             );
         }
 
@@ -214,7 +158,7 @@ const PurchaseHistory = () => {
         }
 
         setFilteredTransactions(filtered);
-    }, [searchTermId, searchStartDate, searchEndDate, searchUser, searchType, allTransactions]);
+    }, [searchTermId, searchStartDate, searchEndDate, searchUser, allTransactions]);
 
     // Initial fetch
     useEffect(() => {
@@ -226,7 +170,6 @@ const PurchaseHistory = () => {
         setSearchStartDate('');
         setSearchEndDate('');
         setSearchUser('');
-        setSearchType('');
     };
 
     if (loading) {
@@ -240,15 +183,15 @@ const PurchaseHistory = () => {
 
     return (
         <Container className="mt-4 mb-5">
-            <h2 className="mb-4">Lịch Sử Giao Dịch</h2>
+            <h2 className="mb-4">Lịch Sử Giao Dịch Ngân Hàng</h2>
 
             {/* Search Bar */}
             <Card className="shadow-sm mb-4">
                 <Card.Body>
                     <h5 className="card-title mb-3"><BsSearch className="me-2"/>Bộ lọc tìm kiếm</h5>
                     <div className="row g-3 align-items-end">
-                        <div className="col-md-2">
-                            <Form.Label htmlFor="searchTermIdInput">Theo ID</Form.Label>
+                        <div className="col-md-3">
+                            <Form.Label htmlFor="searchTermIdInput">Theo ID Giao dịch</Form.Label>
                             <Form.Control
                                 type="text"
                                 id="searchTermIdInput"
@@ -267,19 +210,7 @@ const PurchaseHistory = () => {
                                 onChange={(e) => setSearchUser(e.target.value)}
                             />
                         </div>
-                        <div className="col-md-2">
-                            <Form.Label htmlFor="searchTypeInput">Loại giao dịch</Form.Label>
-                            <Form.Select
-                                id="searchTypeInput"
-                                value={searchType}
-                                onChange={(e) => setSearchType(e.target.value)}
-                            >
-                                <option value="">Tất cả</option>
-                                <option value="EARN">Nhận điểm</option>
-                                <option value="SPEND">Tiêu điểm</option>
-                            </Form.Select>
-                        </div>
-                        <div className="col-md-3">
+                        <div className="col-md-4">
                             <Form.Label htmlFor="searchStartDateInput">Khoảng thời gian</Form.Label>
                             <div className="d-flex gap-2">
                                 <Form.Control
@@ -298,16 +229,14 @@ const PurchaseHistory = () => {
                                 />
                             </div>
                         </div>
-                        <div className="col-md-1 d-grid">
-                              <Button
-        variant="outline-secondary"
-        onClick={handleResetSearch}
-        className="d-flex align-items-center justify-content-center px-2 py-1" // Thêm class padding
-        disabled={loading || deleting}
-    >
-        <BsXCircleFill className="me-1" size="0.9em"/> {/* Có thể giảm size icon và margin */}
-        <span style={{ fontSize: '0.9em' }}>Reset</span> {/* Giảm size chữ */}
-    </Button>
+                        <div className="col-md-2 d-grid">
+                            <Button
+                                variant="outline-secondary"
+                                onClick={handleResetSearch}
+                                className="d-flex align-items-center justify-content-center"
+                            >
+                                <BsXCircleFill className="me-2" /> Reset
+                            </Button>
                         </div>
                     </div>
                 </Card.Body>
@@ -329,11 +258,11 @@ const PurchaseHistory = () => {
                             <thead className="table-light" style={{ borderBottom: '2px solid #dee2e6' }}>
                                 <tr>
                                     <th className="py-3 fw-semibold text-center">ID</th>
-                                    <th className="py-3 fw-semibold">Người dùng</th>
-                                    <th className="py-3 fw-semibold text-center">Loại</th>
-                                    <th className="py-3 fw-semibold text-center">Điểm</th>
-                                    <th className="py-3 fw-semibold">Mô tả</th>
+                                    <th className="py-3 fw-semibold">Người mua</th>
+                                    <th className="py-3 fw-semibold">Sản phẩm</th>
                                     <th className="py-3 fw-semibold text-center">Ngày</th>
+                                    <th className="py-3 fw-semibold text-center">Phương thức</th>
+                                    <th className="py-3 fw-semibold text-end">Số tiền</th>
                                     <th className="py-3 fw-semibold text-center">Trạng thái</th>
                                     <th className="py-3 fw-semibold text-center">Hành động</th>
                                 </tr>
@@ -352,14 +281,15 @@ const PurchaseHistory = () => {
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="text-center">
-                                                {formatTransactionType(transaction.type)}
+                                            <td>
+                                                <div className="d-flex align-items-center">
+                                                    <BsBoxFill className="text-success me-2" />
+                                                    <div>
+                                                        <div className="fw-bold">{transaction.item?.name || 'N/A'}</div>
+                                                        <small className="text-muted">ID: {transaction.item?.itemId || 'N/A'}</small>
+                                                    </div>
+                                                </div>
                                             </td>
-                                            <td className="text-center fw-bold">
-                                                {transaction.type === 'EARN' ? '+' : '-'}
-                                                {transaction.points?.toLocaleString('vi-VN')}
-                                            </td>
-                                            <td>{transaction.description || 'N/A'}</td>
                                             <td className="text-center">
                                                 {transaction.transactionTime
                                                     ? new Date(transaction.transactionTime).toLocaleString('vi-VN', {
@@ -370,6 +300,12 @@ const PurchaseHistory = () => {
                                                         minute: '2-digit'
                                                     })
                                                     : 'N/A'}
+                                            </td>
+                                            <td className="text-center">
+                                                {formatPaymentMethod(transaction.paymentMethod)}
+                                            </td>
+                                            <td className="text-end fw-bold">
+                                                {transaction.amount?.toLocaleString('vi-VN')} VNĐ
                                             </td>
                                             <td className="text-center">
                                                 {formatStatus(transaction.status)}
@@ -392,7 +328,7 @@ const PurchaseHistory = () => {
                                         <td colSpan="8" className="text-center p-5">
                                             <BsInfoCircleFill size="2em" className="text-muted mb-2" />
                                             <p className="mb-0 text-muted">
-                                                {(searchTermId || searchStartDate || searchEndDate || searchUser || searchType)
+                                                {(searchTermId || searchStartDate || searchEndDate || searchUser)
                                                     ? "Không tìm thấy giao dịch nào khớp với tiêu chí tìm kiếm."
                                                     : "Không có giao dịch nào."
                                                 }
@@ -409,4 +345,4 @@ const PurchaseHistory = () => {
     );
 };
 
-export default PurchaseHistory;
+export default BankPurchaseHistory; 

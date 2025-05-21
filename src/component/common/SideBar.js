@@ -49,7 +49,8 @@ const Sidebar = () => {
           <div className="bg-white py-2 collapse-inner rounded">
             <h6 className="collapse-header">Khách hàng:</h6>
             <Link className="collapse-item" to="/usermanagement">Tài khoản người dùng</Link>
-            <Link className="collapse-item" to="/purchaseHistory">Lịch sử mua hàng</Link>
+            <Link className="collapse-item" to="/purchaseHistory">Lịch sử mua hàng app</Link>
+            <Link className="collapse-item" to="/bankPurchaseHistory">Lịch sử mua hàng</Link>
           </div>
         </div>
       </li>

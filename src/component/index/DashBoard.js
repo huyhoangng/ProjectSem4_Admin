@@ -53,55 +53,74 @@ const Dashboard = () => {
 
   // Initial data fetching on component mount
   useEffect(() => {
-    // Use Promise.all to fetch data concurrently for potentially faster loading
-    // Although fetchData sets state internally, we don't strictly need to wait here
-    // unless subsequent logic depends on ALL fetches completing.
-    Promise.allSettled([ // Use allSettled to run all fetches even if some fail
-        fetchData("http://54.251.220.228:8080/trainingSouls/users", (data) =>
-          setUserCount(data?.length ?? 0)
-        ),
+    Promise.allSettled([
+        fetchData("http://54.251.220.228:8080/trainingSouls/users", (data) => {
+          setUserCount(data?.length ?? 0);
+          const premiumUsers = data?.filter(user => user.accountType?.toLowerCase() === 'premium').length ?? 0;
+          setPackageUserCount(premiumUsers);
+        }),
         fetchData("http://54.251.220.228:8080/trainingSouls/items", setRawItemsData),
         fetchData(
           "http://54.251.220.228:8080/trainingSouls/posts/getAllPost",
           (data) => setPostCount(data?.length ?? 0)
         ),
-        fetchData(
-          "http://54.251.220.228:8080/api/revenue/monthly",
-          setMonthlyRevenue
-        ),
-        fetchData(
-          "http://54.251.220.228:8080/api/revenue/annual",
-          setAnnualRevenue
-        )
+        // Update revenue fetching
+        fetchData("http://54.251.220.228:8080/trainingSouls/PurchaseTransaction", (data) => {
+          if (Array.isArray(data)) {
+            // Calculate monthly revenue (current month)
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            
+            const monthlyTransactions = data.filter(transaction => {
+              const transactionDate = new Date(transaction.transactionTime);
+              return transactionDate.getMonth() === currentMonth && 
+                     transactionDate.getFullYear() === currentYear &&
+                     transaction.status?.toUpperCase() === 'SUCCESS';
+            });
+            
+            const monthlyTotal = monthlyTransactions.reduce((sum, transaction) => 
+              sum + (transaction.amount || 0), 0);
+            setMonthlyRevenue(monthlyTotal);
+
+            // Calculate annual revenue (last 12 months)
+            const annualData = Array.from({ length: 12 }, (_, i) => {
+              const month = (currentMonth - i + 12) % 12;
+              const year = currentYear - Math.floor((currentMonth - i) / 12);
+              
+              const monthTransactions = data.filter(transaction => {
+                const transactionDate = new Date(transaction.transactionTime);
+                return transactionDate.getMonth() === month && 
+                       transactionDate.getFullYear() === year &&
+                       transaction.status?.toUpperCase() === 'SUCCESS';
+              });
+              
+              const monthTotal = monthTransactions.reduce((sum, transaction) => 
+                sum + (transaction.amount || 0), 0);
+              
+              return {
+                month: new Date(year, month).toLocaleString('vi-VN', { month: 'long' }),
+                revenue: monthTotal
+              };
+            }).reverse();
+
+            setAnnualRevenue(annualData);
+          }
+        })
     ]).then(results => {
-        // Optional: Check results if you need to know which specific fetches failed
         results.forEach((result, index) => {
             if (result.status === 'rejected') {
                 console.warn(`API call ${index} failed:`, result.reason);
-                // Error state is already set within fetchData
             }
         });
     });
-
   }, []); // Empty dependency array: runs once on mount
-
-  // Calculate packageUserCount when rawItemsData is updated
-  useEffect(() => {
-    if (rawItemsData && Array.isArray(rawItemsData) && rawItemsData.length > 0) {
-      const count = rawItemsData.filter(
-        (pkg) => pkg.subscribedUsers?.length > 0
-      ).length;
-      setPackageUserCount(count);
-    } else {
-      setPackageUserCount(0); // Reset if no data or data is not an array
-    }
-  }, [rawItemsData]); // Dependency: runs when rawItemsData changes
 
   // --- Chart Data Configurations ---
 
   // User & Post Growth Chart (Bar Chart) Data
   const userChartData = {
-    labels: ["Tổng số người dùng", "Người đăng ký gói", "Tổng số bài viết"],
+    labels: ["Tổng số người dùng", "Người dùng Premium", "Tổng số bài viết"],
     datasets: [
       {
         label: "Số lượng",
@@ -123,11 +142,11 @@ const Dashboard = () => {
 
   // Revenue Chart (Bar Chart) Data
   const revenueChartData = {
-    labels: annualRevenue.map((data, index) => data.month || `Tháng ${data.id || index + 1}`),
+    labels: annualRevenue.map(data => data.month),
     datasets: [
       {
         label: "Doanh thu hàng tháng",
-        data: annualRevenue.map((data) => data.revenue),
+        data: annualRevenue.map(data => data.revenue),
         borderColor: "#ffc107",
         backgroundColor: "rgba(255, 193, 7, 0.5)",
         borderWidth: 1,
@@ -138,8 +157,7 @@ const Dashboard = () => {
   // Helper to format currency
   const formatCurrency = (amount) => {
      const value = amount ?? 0;
-     // Using USD for now, change 'en-US', 'USD' to 'vi-VN', 'VND' if needed
-     return value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+     return value.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
   };
 
   // --- Component Return (JSX) ---
@@ -190,9 +208,9 @@ const Dashboard = () => {
         <div className="col-md-6 col-lg-3 mb-3">
           <div className="card shadow-sm h-100">
             <div className="card-body text-center">
-              <h5 className="card-title">Người đăng ký gói</h5>
+              <h5 className="card-title">Người dùng Premium</h5>
               <p className="card-text fs-4 fw-bold">{packageUserCount}</p>
-              <p className="card-text text-success small">🔼 +15% (người dùng trả phí)</p> {/* Placeholder % */}
+              <p className="card-text text-success small">🔼 +15% (người dùng trả phí)</p>
             </div>
           </div>
         </div>
@@ -219,33 +237,7 @@ const Dashboard = () => {
       </div>
 
       {/* --- Annual Revenue Table (Optional) --- */}
-       <div className="card p-3 mb-4 shadow-sm">
-         <h3>Chi tiết doanh thu (12 tháng qua)</h3>
-         {annualRevenue.length > 0 ? (
-            <div className="table-responsive">
-                <table className="table table-striped table-hover">
-                <thead>
-                    <tr>
-                    <th>Tháng</th>
-                    <th>Doanh thu</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {annualRevenue.map((data, index) => (
-                    <tr key={index}>
-                        <td>{data.month || `Tháng ${index + 1}`}</td>
-                        <td>{formatCurrency(data.revenue)}</td>
-                    </tr>
-                    ))}
-                </tbody>
-                </table>
-            </div>
-         ) : (
-             // Show only if there's NO error, otherwise the main error message is enough
-            !error && <p>Không có dữ liệu doanh thu hàng năm để hiển thị.</p>
-         )}
-         {/* You could also show a specific loading indicator here if needed */}
-       </div>
+
 
 
       {/* --- Charts Row --- */}
@@ -282,6 +274,7 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+      
     </div>
   );
 };
