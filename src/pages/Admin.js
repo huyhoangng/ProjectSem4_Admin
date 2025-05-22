@@ -1,7 +1,6 @@
 import React from "react";
-import AdminManagement from "../component/accountAdmin/AccountAdminPage";
 
-
+import CoachManagement from "../component/accountAdmin/AccountPTPage";
 
 
 
@@ -9,7 +8,7 @@ import AdminManagement from "../component/accountAdmin/AccountAdminPage";
 const Admin = () => {
   return (
     <div>
-      <AdminManagement />
+      <CoachManagement/>
      
     </div>
   );

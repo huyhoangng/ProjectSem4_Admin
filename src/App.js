@@ -40,7 +40,7 @@ const App = () => {
 
         {/* Các trang có layout */}
         <Route element={<ProtectedLayout />}>
-          <Route path="/adminmanager" element={<Admin />} />
+          <Route path="/coachmanager" element={<Admin />} />
           <Route path="/packages" element={<PackagePage />} />
           <Route path="/posts" element={<PostPage />} />
           <Route path="/usermanagement" element={<UsersManagementPage />} />

@@ -1,58 +1,95 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Container, Table, Card } from "react-bootstrap";
+import { Container, Table, Card, Form, InputGroup, Spinner, Alert, Badge,Row, Col } from "react-bootstrap";
+import {
+    FaSearch,
+    FaTrophy,
+    FaHeartbeat,
+    FaRunning,
+    FaShieldAlt,
+    FaSkullCrossbones,
+    FaSortAmountDown,
+    FaSortAmountUp,
+    FaExclamationTriangle // <<< THÊM ICON NÀY
+} from "react-icons/fa";
 
 const API_RANKS = "http://54.251.220.228:8080/trainingSouls/ranks";
 
-// Define season colors (adjust hex codes if needed)
+// Define season colors (giữ nguyên)
 const seasonColors = {
-    Spring: "#28a745", // Green (Bootstrap success color)
-    Summer: "#fd7e14", // Orange (Bootstrap orange color)
-    Autumn: "#ffc107", // Yellow (Bootstrap warning color)
-    Winter: "#0d6efd", // Blue (Bootstrap primary color)
+    Spring: "#28a745",
+    Summer: "#fd7e14",
+    Autumn: "#ffc107",
+    Winter: "#0d6efd",
 };
 
 const Ranks = () => {
-    const [ranks, setRanks] = useState([]);
-    // State for the current season name and color
-    const [currentSeason, setCurrentSeason] = useState({ name: "", color: "#6c757d" }); // Default grey
+    const [allRanks, setAllRanks] = useState([]); // Dữ liệu gốc từ API
+    const [filteredRanks, setFilteredRanks] = useState([]); // Dữ liệu đã lọc để hiển thị
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [currentSeason, setCurrentSeason] = useState({ name: "", color: "#6c757d" });
+    const [searchTerm, setSearchTerm] = useState("");
+    const [sortConfig, setSortConfig] = useState({ key: 'totalScore', direction: 'descending' });
 
-    // Function to determine the current season based on month (Northern Hemisphere approx.)
-    const determineSeason = () => {
-        const month = new Date().getMonth(); // 0 = January, 11 = December
-    
-        // Mùa Xuân: Tháng 1, 2, 3 (index 0, 1, 2)
-        if (month >= 0 && month <= 2) {
-            return { name: "Xuân", color: seasonColors.Spring };
-        }
-        // Mùa Hạ: Tháng 4, 5, 6 (index 3, 4, 5)
-        else if (month >= 3 && month <= 5) {
-            return { name: "Hạ", color: seasonColors.Summer };
-        }
-        // Mùa Thu: Tháng 7, 8, 9 (index 6, 7, 8)
-        else if (month >= 6 && month <= 8) {
-            return { name: "Thu", color: seasonColors.Autumn };
-        }
-        // Mùa Đông: Tháng 10, 11, 12 (index 9, 10, 11)
-        else { // Các tháng còn lại (9, 10, 11)
-            return { name: "Đông", color: seasonColors.Winter };
-        }
+
+    const determineSeason = () => { /* ... (giữ nguyên) ... */
+        const month = new Date().getMonth();
+        if (month >= 0 && month <= 2) return { name: "Xuân", color: seasonColors.Spring };
+        else if (month >= 3 && month <= 5) return { name: "Hạ", color: seasonColors.Summer };
+        else if (month >= 6 && month <= 8) return { name: "Thu", color: seasonColors.Autumn };
+        else return { name: "Đông", color: seasonColors.Winter };
     };
 
     useEffect(() => {
         fetchRanks();
-        // Determine and set the current season on component mount
-        const seasonInfo = determineSeason();
-        setCurrentSeason(seasonInfo);
-    }, []); // Empty dependency array means this runs once on mount
+        setCurrentSeason(determineSeason());
+    }, []);
+
+    // Effect để lọc và sắp xếp khi searchTerm hoặc allRanks hoặc sortConfig thay đổi
+    useEffect(() => {
+        let processedRanks = [...allRanks]; // Tạo bản sao để không thay đổi allRanks gốc
+
+        // Lọc theo searchTerm
+        if (searchTerm.trim()) {
+            const lowercasedFilter = searchTerm.trim().toLowerCase();
+            processedRanks = processedRanks.filter(rank =>
+                rank.userName?.toLowerCase().includes(lowercasedFilter)
+            );
+        }
+
+        // Sắp xếp
+        if (sortConfig.key) {
+            processedRanks.sort((a, b) => {
+                let valA = a[sortConfig.key];
+                let valB = b[sortConfig.key];
+
+                // Xử lý trường hợp giá trị là null hoặc undefined để tránh lỗi
+                valA = valA === null || valA === undefined ? -Infinity : valA;
+                valB = valB === null || valB === undefined ? -Infinity : valB;
+
+
+                if (valA < valB) {
+                    return sortConfig.direction === 'ascending' ? -1 : 1;
+                }
+                if (valA > valB) {
+                    return sortConfig.direction === 'ascending' ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+        setFilteredRanks(processedRanks);
+    }, [searchTerm, allRanks, sortConfig]);
+
 
     const fetchRanks = async () => {
+        setIsLoading(true);
+        setError(null);
         const token = sessionStorage.getItem("token");
 
         if (!token) {
-            console.error("Không tìm thấy token!");
-            // Optionally, show an alert or message to the user
-            // alert("Vui lòng đăng nhập để xem bảng xếp hạng.");
+            setError("Vui lòng đăng nhập để xem bảng xếp hạng.");
+            setIsLoading(false);
             return;
         }
 
@@ -60,104 +97,184 @@ const Ranks = () => {
             const response = await axios.get(API_RANKS, {
                 headers: {
                     "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json",
+                    "Content-Type": "application/json", // Thường không cần cho GET
                 }
             });
-            // Sort ranks by totalScore descending before setting state
-            const sortedRanks = response.data.sort((a, b) => b.totalScore - a.totalScore);
-            setRanks(sortedRanks);
-        } catch (error) {
-            console.error("Lỗi khi lấy danh sách rank:", error);
-            alert("Không thể tải bảng xếp hạng!");
+            // API trả về mảng trực tiếp, không cần response.data.sort nữa vì sẽ sort trong useEffect
+            setAllRanks(Array.isArray(response.data) ? response.data : []);
+        } catch (err) {
+            console.error("Lỗi khi lấy danh sách rank:", err);
+            if (err.response) {
+                 setError(err.response.data?.message || `Không thể tải bảng xếp hạng (Lỗi: ${err.response.status})`);
+            } else if (err.request) {
+                setError("Không thể kết nối đến máy chủ. Vui lòng kiểm tra mạng.");
+            } else {
+                setError("Đã xảy ra lỗi không xác định khi tải bảng xếp hạng.");
+            }
+            setAllRanks([]);
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const getMedal = (index) => {
-        const medalStyle = {
-            fontSize: "1.75rem",
-        };
+    const getRankDisplay = (rankValue, index) => {
+        // Ưu tiên hiển thị rank từ API nếu có, nếu không thì dùng index
+        const displayRank = rankValue !== null && rankValue !== undefined ? rankValue : index + 1;
+        const medalStyle = { fontSize: "1.75rem", verticalAlign: 'middle' };
 
-        switch (index) {
-            case 0:
-                return <span style={medalStyle}>🥇</span>;
-            case 1:
-                return <span style={medalStyle}>🥈</span>;
-            case 2:
-                return <span style={medalStyle}>🥉</span>;
-            default:
-                // Display rank number for others
-                return <span style={{ fontWeight: 'bold' }}>{index + 1}</span>;
-        }
+        if (displayRank === 1) return <span style={medalStyle}>🥇</span>;
+        if (displayRank === 2) return <span style={medalStyle}>🥈</span>;
+        if (displayRank === 3) return <span style={medalStyle}>🥉</span>;
+        return <Badge pill bg="secondary" className="px-2 py-1 fs-6">{displayRank}</Badge>;
     };
+
+    const requestSort = (key) => {
+        let direction = 'ascending';
+        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+            direction = 'descending';
+        } else if (sortConfig.key === key && sortConfig.direction === 'descending') {
+            // Optional: Xóa sắp xếp nếu nhấp lại cột đang sắp xếp giảm dần
+            // direction = null;
+            // key = null;
+            // Hoặc quay lại ascending
+             direction = 'ascending';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const getSortIndicator = (key) => {
+        if (sortConfig.key === key) {
+            return sortConfig.direction === 'ascending' ? <FaSortAmountUp className="ms-1" /> : <FaSortAmountDown className="ms-1" />;
+        }
+        return null;
+    };
+
 
     return (
-        <Container className="mt-5">
-            {/* Header section with Title and Season Indicator */}
-            <div className="d-flex justify-content-between align-items-center mb-4">
-                <h2 className="mb-0">🏆 Bảng xếp hạng người dùng</h2>
-                {currentSeason.name && ( // Render only if season name is available
+        <Container className="mt-4 mb-5">
+            <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                <h2 className="mb-0 text-primary fw-bold">
+                    <FaTrophy className="me-2" /> Bảng Xếp Hạng Người Dùng
+                </h2>
+                {currentSeason.name && (
                     <div
-                        className="season-indicator" // Use class for base styles
-                        style={{ backgroundColor: currentSeason.color }} // Apply dynamic color
+                        className="season-indicator px-3 py-2"
+                        style={{ backgroundColor: currentSeason.color }}
                     >
-                        Mùa: {currentSeason.name}
+                        Mùa: <strong>{currentSeason.name}</strong>
                     </div>
                 )}
             </div>
 
-            <Card className="p-3 shadow-sm">
-                <div style={{ overflowX: "auto" }}>
-                    <Table striped bordered hover responsive className="table-rank">
-                        <thead>
-                            <tr className="text-center">
-                                <th>Hạng</th>
-                                <th>Người dùng</th>
-                                <th>Điểm số</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {ranks.length > 0 ? (
-                                ranks.map((rank, index) => (
-                                    // Assuming the API response has a unique 'id' or similar for keys
-                                    // If not, use a combination or index (less ideal)
-                                    <tr key={rank.userId || `rank-${index}`} className="text-center">
-                                        <td>{getMedal(index)}</td>
-                                        {/* Make sure 'userName' field exists in your API response */}
-                                        <td>{rank.userName || 'N/A'}</td>
-                                        <td>{rank.totalScore}</td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="3" className="text-center">Đang tải hoặc không có dữ liệu xếp hạng...</td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </Table>
+            {isLoading && (
+                <div className="text-center my-5">
+                    <Spinner animation="border" variant="primary" style={{width: '3rem', height: '3rem'}} />
+                    <p className="mt-3 fs-5 text-muted">Đang tải bảng xếp hạng...</p>
                 </div>
-            </Card>
+            )}
+            {error && <Alert variant="danger" className="d-flex align-items-center"><FaExclamationTriangle className="me-2"/> {error}</Alert>}
 
-            {/* Add CSS for the season indicator */}
+            {!isLoading && !error && (
+                <Card className="shadow-sm">
+                    <Card.Header className="bg-light p-3">
+                        <Form>
+                            <Row className="g-2">
+                                <Col>
+                                    <InputGroup>
+                                        <InputGroup.Text><FaSearch /></InputGroup.Text>
+                                        <Form.Control
+                                            type="text"
+                                            placeholder="Tìm kiếm theo tên người dùng..."
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                        />
+                                    </InputGroup>
+                                </Col>
+                            </Row>
+                        </Form>
+                    </Card.Header>
+                    <Card.Body className="p-0">
+                        <div className="table-responsive">
+                            <Table striped bordered hover responsive className="table-rank align-middle mb-0">
+                                <thead className="table-dark">
+                                    <tr className="text-center">
+                                        <th onClick={() => requestSort('rank')} style={{cursor: 'pointer', width: '8%'}}>
+                                            Hạng {getSortIndicator('rank')}
+                                        </th>
+                                        <th onClick={() => requestSort('userName')} style={{cursor: 'pointer', width: '25%'}} className="text-start ps-3">
+                                            Người dùng {getSortIndicator('userName')}
+                                        </th>
+                                        <th onClick={() => requestSort('totalScore')} style={{cursor: 'pointer', width: '12%'}}>
+                                            Tổng Điểm {getSortIndicator('totalScore')}
+                                        </th>
+                                        <th onClick={() => requestSort('strengthScore')} style={{cursor: 'pointer', width: '12%'}}>
+                                            Sức mạnh {getSortIndicator('strengthScore')}
+                                        </th>
+                                        <th onClick={() => requestSort('enduranceScore')} style={{cursor: 'pointer', width: '12%'}}>
+                                            Sức bền {getSortIndicator('enduranceScore')}
+                                        </th>
+                                        <th onClick={() => requestSort('healthScore')} style={{cursor: 'pointer', width: '12%'}}>
+                                            Sức khỏe {getSortIndicator('healthScore')}
+                                        </th>
+                                        <th onClick={() => requestSort('agilityScore')} style={{cursor: 'pointer', width: '12%'}}>
+                                            Nhanh nhẹn {getSortIndicator('agilityScore')}
+                                        </th>
+                                        {/* <th onClick={() => requestSort('deathpoints')} style={{cursor: 'pointer', width: '10%'}}>
+                                            Death Points {getSortIndicator('deathpoints')}
+                                        </th> */}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredRanks.length > 0 ? (
+                                        filteredRanks.map((rankItem, index) => (
+                                            <tr key={rankItem.id || rankItem.userId || `rank-${index}`} className="text-center">
+                                                <td className="fw-bold">{getRankDisplay(rankItem.rank, index)}</td>
+                                                <td className="text-start ps-3 fw-medium">{rankItem.userName || <span className="text-muted fst-italic">N/A</span>}</td>
+                                                <td className="fw-bolder text-primary">{rankItem.totalScore?.toFixed(1) ?? 'N/A'}</td>
+                                                <td>{rankItem.strengthScore ?? '-'}</td>
+                                                <td>{rankItem.enduranceScore ?? '-'}</td>
+                                                <td>{rankItem.healthScore ?? '-'}</td>
+                                                <td>{rankItem.agilityScore ?? '-'}</td>
+                                                {/* <td>{rankItem.deathpoints ?? '-'}</td> */}
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="7" className="text-center p-4"> {/* Cập nhật colSpan */}
+                                                {searchTerm ? "Không tìm thấy người dùng nào khớp." : "Hiện không có dữ liệu xếp hạng."}
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </Table>
+                        </div>
+                    </Card.Body>
+                </Card>
+            )}
+
             <style>
                 {`
                 .season-indicator {
-                    color: #fff; /* White text */
-                    padding: 6px 14px;
-                    border-radius: 15px; /* Rounded corners */
-                    font-weight: bold;
-                    font-size: 0.9em;
-                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15); /* Subtle shadow */
+                    color: #fff;
+                    padding: 8px 16px; /* Tăng padding */
+                    border-radius: 20px; /* Bo tròn hơn */
+                    font-weight: 500; /* Điều chỉnh độ đậm */
+                    font-size: 1em; /* Tăng kích thước chữ */
+                    box-shadow: 0 3px 7px rgba(0, 0, 0, 0.2);
                     text-align: center;
-                    transition: background-color 0.5s ease-in-out; /* Smooth color transition */
+                    transition: background-color 0.5s ease-in-out;
                 }
-
                 .table-rank thead {
-                    background-color: #f8f9fa; /* Light grey header */
-                    font-weight: bold;
+                    /* background-color: #343a40; */ /* Dark header */
+                    /* color: white; */
+                    font-weight: 600; /* Đậm hơn chút */
                 }
-
                 .table-rank td, .table-rank th {
-                     vertical-align: middle; /* Center content vertically */
+                     vertical-align: middle;
+                }
+                .table-rank th[style*="cursor:pointer"]:hover {
+                    background-color: #495057; /* Màu khi hover header có thể sort */
+                    color: white;
                 }
                 `}
             </style>

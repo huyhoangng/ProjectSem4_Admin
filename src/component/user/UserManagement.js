@@ -247,8 +247,7 @@ const UserManagement = () => {
                                     <th className="py-3 fw-semibold text-center text-nowrap">User ID</th>
                                     <th className="py-3 fw-semibold text-start ps-3 text-nowrap">Tên</th>
                                     <th className="py-3 fw-semibold text-start text-nowrap">Email</th>
-                                    <th className="py-3 fw-semibold text-center text-nowrap">SĐT</th>
-                                    {/* Bỏ cột Loại TK vì đã phân loại theo bảng */}
+                                   
                                     <th className="py-3 fw-semibold text-center text-nowrap">Điểm</th>
                                     <th className="py-3 fw-semibold text-center text-nowrap">Cấp</th>
                                     <th className="py-3 fw-semibold text-center text-nowrap">Streak</th>
@@ -262,8 +261,7 @@ const UserManagement = () => {
                                             <td className="text-center"><code>{user.userID}</code></td>
                                             <td className="text-start ps-3">{user.name || <span className='text-muted fst-italic'>Chưa có</span>}</td>
                                             <td className="text-start">{user.email || <span className='text-muted fst-italic'>Chưa có</span>}</td>
-                                            <td className="text-center">{user.phoneNumber || <span className='text-muted'>-</span>}</td>
-                                            {/* <td className="text-center">{formatAccountType(user.accountType)}</td> */}
+                                         
                                             <td className="text-center">{user.points ?? <span className='text-muted'>0</span>}</td>
                                             <td className="text-center">{user.level ?? <span className='text-muted'>1</span>}</td>
                                             <td className="text-center">{user.streak ?? <span className='text-muted'>0</span>}</td>
@@ -277,7 +275,7 @@ const UserManagement = () => {
                                                 >
                                                     <BsPencilSquare size="1.2em" />
                                                 </Button>
-                                                <Button
+                                                {/* <Button
                                                     variant="outline-danger" size="sm"
                                                     onClick={() => handleDeleteUser(user.userID)}
                                                     title="Xóa người dùng"
@@ -285,7 +283,7 @@ const UserManagement = () => {
                                                     disabled={deleting || user.userID === editingUserId}
                                                 >
                                                     <BsTrashFill size="1.2em" />
-                                                </Button>
+                                                </Button> */}
                                             </td>
                                         </tr>
                                     ))

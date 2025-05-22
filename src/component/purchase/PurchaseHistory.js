@@ -279,35 +279,15 @@ const PurchaseHistory = () => {
                                 <option value="SPEND">Tiêu điểm</option>
                             </Form.Select>
                         </div>
-                        <div className="col-md-3">
-                            <Form.Label htmlFor="searchStartDateInput">Khoảng thời gian</Form.Label>
-                            <div className="d-flex gap-2">
-                                <Form.Control
-                                    type="date"
-                                    id="searchStartDateInput"
-                                    value={searchStartDate}
-                                    onChange={(e) => setSearchStartDate(e.target.value)}
-                                />
-                                <span className="align-self-center">đến</span>
-                                <Form.Control
-                                    type="date"
-                                    id="searchEndDateInput"
-                                    value={searchEndDate}
-                                    onChange={(e) => setSearchEndDate(e.target.value)}
-                                    min={searchStartDate || undefined}
-                                />
-                            </div>
-                        </div>
-                        <div className="col-md-1 d-grid">
-                              <Button
-        variant="outline-secondary"
-        onClick={handleResetSearch}
-        className="d-flex align-items-center justify-content-center px-2 py-1" // Thêm class padding
-        disabled={loading || deleting}
-    >
-        <BsXCircleFill className="me-1" size="0.9em"/> {/* Có thể giảm size icon và margin */}
-        <span style={{ fontSize: '0.9em' }}>Reset</span> {/* Giảm size chữ */}
-    </Button>
+                    
+                        <div className="col-md-2 d-grid">
+                            <Button
+                                variant="outline-secondary"
+                                onClick={handleResetSearch}
+                                className="d-flex align-items-center justify-content-center"
+                            >
+                                <BsXCircleFill className="me-2" /> Reset
+                            </Button>
                         </div>
                     </div>
                 </Card.Body>
@@ -333,7 +313,6 @@ const PurchaseHistory = () => {
                                     <th className="py-3 fw-semibold text-center">Loại</th>
                                     <th className="py-3 fw-semibold text-center">Điểm</th>
                                     <th className="py-3 fw-semibold">Mô tả</th>
-                                    <th className="py-3 fw-semibold text-center">Ngày</th>
                                     <th className="py-3 fw-semibold text-center">Trạng thái</th>
                                     <th className="py-3 fw-semibold text-center">Hành động</th>
                                 </tr>
@@ -360,7 +339,7 @@ const PurchaseHistory = () => {
                                                 {transaction.points?.toLocaleString('vi-VN')}
                                             </td>
                                             <td>{transaction.description || 'N/A'}</td>
-                                            <td className="text-center">
+                                            {/* <td className="text-center">
                                                 {transaction.transactionTime
                                                     ? new Date(transaction.transactionTime).toLocaleString('vi-VN', {
                                                         year: 'numeric',
@@ -370,7 +349,7 @@ const PurchaseHistory = () => {
                                                         minute: '2-digit'
                                                     })
                                                     : 'N/A'}
-                                            </td>
+                                            </td> */}
                                             <td className="text-center">
                                                 {formatStatus(transaction.status)}
                                             </td>
@@ -382,7 +361,7 @@ const PurchaseHistory = () => {
                                                     disabled={deleting}
                                                     className="d-inline-flex align-items-center justify-content-center p-1"
                                                 >
-                                                    <BsTrashFill size="1.2em" />
+                                                    <BsTrashFill size="1.5em" />
                                                 </Button>
                                             </td>
                                         </tr>

@@ -1,18 +1,48 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Button, Table, Modal, Form, Container, Card, Spinner, Alert } from "react-bootstrap"; // Thêm Spinner, Alert
+import { Button, Table, Modal, Form, Container, Card, Spinner, Alert } from "react-bootstrap";
 import {
     FaPlus,
     FaEdit,
     FaTrash,
     FaSave,
     FaTimes,
-    FaPlayCircle, // Thêm icon này
-    FaExclamationTriangle, // Thêm icon này
-    FaCheckCircle // Thêm icon này
+    FaPlayCircle,
+    FaExclamationTriangle,
+    FaCheckCircle
 } from "react-icons/fa";
 
 const API_BASE_URL = "http://54.251.220.228:8080/trainingSouls/posts";
+
+// Hàm trợ giúp để lấy thông báo lỗi dạng chuỗi (QUAN TRỌNG)
+const getStructuredErrorMessage = (error, defaultMessage) => {
+    if (typeof error === 'string') { // Nếu lỗi đã là chuỗi thì trả về luôn
+        return error;
+    }
+    if (error && error.response) {
+        // Ưu tiên message từ server nếu có và là chuỗi
+        if (typeof error.response.data?.message === 'string') {
+            return error.response.data.message;
+        }
+        if (typeof error.response.data?.error === 'string') { // Một số API dùng trường 'error'
+            return error.response.data.error;
+        }
+        // Nếu response.data là một chuỗi (ví dụ: lỗi HTML từ proxy, hoặc thông báo lỗi đơn giản)
+        if (typeof error.response.data === 'string' && error.response.data.length < 250 && !error.response.data.startsWith('<')) { // Giới hạn độ dài và kiểm tra không phải HTML
+            return error.response.data;
+        }
+        // Thông báo chung dựa trên status code
+        return `${defaultMessage} (Lỗi Server: ${error.response.status} - ${error.response.statusText})`;
+    } else if (error && error.request) {
+        // Request đã được gửi nhưng không nhận được phản hồi
+        return `${defaultMessage} (Không nhận được phản hồi từ máy chủ. Kiểm tra kết nối mạng.)`;
+    } else if (error && error.message) {
+        // Lỗi xảy ra khi thiết lập request hoặc lỗi JS khác
+        return `${defaultMessage} (Lỗi: ${error.message})`;
+    }
+    return defaultMessage; // Trả về thông báo mặc định nếu không xác định được lỗi cụ thể
+};
+
 
 const PostManagement = () => {
     const [posts, setPosts] = useState([]);
@@ -21,9 +51,9 @@ const PostManagement = () => {
     const [formData, setFormData] = useState({ id: null, title: "", content: "", imgUrl: "", videoUrl: "" });
     const [newPost, setNewPost] = useState({ title: "", content: "", imgUrl: "", videoUrl: "" });
     const [showCreateModal, setShowCreateModal] = useState(false);
-    const [isLoading, setIsLoading] = useState(false); // State cho loading chung
-    const [error, setError] = useState(null); // State cho lỗi chung
-    const [successMessage, setSuccessMessage] = useState(''); // State cho thông báo thành công
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null); // Sẽ luôn là string hoặc null
+    const [successMessage, setSuccessMessage] = useState('');
 
     useEffect(() => {
         fetchPosts();
@@ -39,12 +69,11 @@ const PostManagement = () => {
         setIsLoading(true);
         try {
             const response = await axios.get(`${API_BASE_URL}/getAllPost`);
-            // Sắp xếp bài viết mới nhất lên đầu (nếu có trường ngày tạo, ví dụ 'createdAt' hoặc 'id' giảm dần)
             setPosts((response.data || []).sort((a, b) => (b.id || 0) - (a.id || 0)));
-        } catch (error) {
-            console.error("Lỗi khi lấy danh sách bài viết:", error);
-            setError(error.response?.data?.message || "Không thể tải danh sách bài viết.");
-            setPosts([]); // Đảm bảo posts là mảng rỗng nếu lỗi
+        } catch (err) { // 'err' ở đây là đối tượng lỗi đầy đủ
+            console.error("Lỗi khi lấy danh sách bài viết:", err);
+            setError(getStructuredErrorMessage(err, "Không thể tải danh sách bài viết."));
+            setPosts([]);
         } finally {
             setIsLoading(false);
         }
@@ -65,10 +94,10 @@ const PostManagement = () => {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 setSuccessMessage(`Bài viết ID: ${postId} đã được xóa thành công.`);
-                fetchPosts(); // Tải lại danh sách
-            } catch (error) {
-                console.error("Lỗi khi xóa bài viết:", error);
-                setError(error.response?.data?.message || "Lỗi khi xóa bài viết! Kiểm tra quyền hạn.");
+                fetchPosts();
+            } catch (err) {
+                console.error("Lỗi khi xóa bài viết:", err);
+                setError(getStructuredErrorMessage(err, "Lỗi khi xóa bài viết! Kiểm tra quyền hạn."));
             } finally {
                 setIsLoading(false);
             }
@@ -90,7 +119,7 @@ const PostManagement = () => {
 
     const handleShowCreateModal = () => {
         clearMessages();
-        setNewPost({ title: "", content: "", imgUrl: "", videoUrl: "" }); // Reset form tạo mới
+        setNewPost({ title: "", content: "", imgUrl: "", videoUrl: "" });
         setShowCreateModal(true);
     };
 
@@ -101,12 +130,10 @@ const PostManagement = () => {
             setError("Bạn chưa đăng nhập hoặc token đã hết hạn!");
             return;
         }
-
         if (!newPost.title.trim()) {
             setError("Tiêu đề không được để trống!");
             return;
         }
-        // Nội dung có thể tùy chọn không bắt buộc, tùy theo yêu cầu
 
         setIsLoading(true);
         try {
@@ -116,71 +143,71 @@ const PostManagement = () => {
                 imgUrl: newPost.imgUrl ? newPost.imgUrl.split("\n").filter(line => line.trim() !== "") : [],
                 videoUrl: newPost.videoUrl ? newPost.videoUrl.split("\n").filter(line => line.trim() !== "") : [],
             };
-
             await axios.post(`${API_BASE_URL}/create-post`, newPostData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
                 },
             });
-
             setSuccessMessage("✅ Bài viết mới đã được thêm thành công!");
             setShowCreateModal(false);
-            setNewPost({ title: "", content: "", imgUrl: "", videoUrl: "" }); // Reset newPost state
-            fetchPosts(); // Tải lại danh sách
-        } catch (error) {
-            console.error("Lỗi khi thêm bài viết:", error);
-            setError(error.response?.data?.message || error.response?.data || "❌ Thêm bài viết thất bại!");
+            setNewPost({ title: "", content: "", imgUrl: "", videoUrl: "" });
+            fetchPosts();
+        } catch (err) {
+            console.error("Lỗi khi thêm bài viết:", err);
+            setError(getStructuredErrorMessage(err, "❌ Thêm bài viết thất bại!"));
         } finally {
             setIsLoading(false);
         }
     };
 
     const handleSaveChanges = async () => {
-        clearMessages();
-        const token = sessionStorage.getItem("token");
-        if (!token) {
-            setError("Bạn chưa đăng nhập hoặc token đã hết hạn!");
-            return;
-        }
+    clearMessages();
+    const token = sessionStorage.getItem("token");
+    if (!token) {
+        setError("Bạn chưa đăng nhập hoặc token đã hết hạn!");
+        return;
+    }
+    if (!formData.title.trim()) {
+        setError("Tiêu đề không được để trống!");
+        return;
+    }
 
-        if (!formData.title.trim()) {
-            setError("Tiêu đề không được để trống!");
-            return;
-        }
+    setIsLoading(true);
+    try {
+        const updatedPostPayload = {
+            title: formData.title.trim(),
+            content: formData.content ? formData.content.split("\n").filter(line => line.trim() !== "") : [],
+            imgUrl: formData.imgUrl ? formData.imgUrl.split("\n").filter(line => line.trim() !== "") : [],
+            videoUrl: formData.videoUrl ? formData.videoUrl.split("\n").filter(line => line.trim() !== "") : [],
+        };
 
-        setIsLoading(true);
-        try {
-            const updatedPostPayload = {
-                title: formData.title.trim(),
-                content: formData.content ? formData.content.split("\n").filter(line => line.trim() !== "") : [],
-                imgUrl: formData.imgUrl ? formData.imgUrl.split("\n").filter(line => line.trim() !== "") : [],
-                videoUrl: formData.videoUrl ? formData.videoUrl.split("\n").filter(line => line.trim() !== "") : [],
-            };
+        // --- THAY ĐỔI Ở ĐÂY ---
+        // Nếu API backend yêu cầu POST để update, hãy đổi axios.put thành axios.post
+        await axios.post( // <<<< SỬA TỪ .put THÀNH .post NẾU API YÊU CẦU
+            `${API_BASE_URL}/update-post/${selectedPost.id}`,
+            updatedPostPayload,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+            }
+        );
+        // --- KẾT THÚC THAY ĐỔI ---
 
-            await axios.put( // Sử dụng PUT cho cập nhật là chuẩn hơn, nhưng API của bạn dùng POST
-                `${API_BASE_URL}/update-post/${selectedPost.id}`,
-                updatedPostPayload,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                }
-            );
+        setSuccessMessage("✅ Bài viết đã được cập nhật thành công!");
+        setShowEditModal(false);
+        fetchPosts(); // Tải lại danh sách
+    } catch (err) { // err ở đây là đối tượng lỗi đầy đủ
+        console.error("Lỗi khi cập nhật bài viết:", err);
+        setError(getStructuredErrorMessage(err, "❌ Cập nhật thất bại! Hãy kiểm tra lại."));
+    } finally {
+        setIsLoading(false);
+    }
+};
 
-            setSuccessMessage("✅ Bài viết đã được cập nhật thành công!");
-            setShowEditModal(false);
-            fetchPosts(); // Tải lại danh sách
-        } catch (error) {
-            console.error("Lỗi khi cập nhật bài viết:", error);
-            setError(error.response?.data?.message || error.response?.data || "❌ Cập nhật thất bại! Hãy kiểm tra lại.");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    // --- Hàm render nội dung (giúp gọn gàng hơn) ---
+    // --- Hàm render nội dung (giữ nguyên) ---
     const renderContent = (contentArray) => {
         if (!Array.isArray(contentArray) || contentArray.length === 0) {
             return <span className="text-muted fst-italic">Không có nội dung</span>;
@@ -198,13 +225,13 @@ const PostManagement = () => {
             return <span className="text-muted fst-italic">Không có ảnh</span>;
         }
         return imgUrls.map((img, index) => (
-            img.trim() ? // Chỉ render nếu URL không rỗng
+            img.trim() ?
             <a key={index} href={img} target="_blank" rel="noopener noreferrer" className="me-2 mb-2 d-inline-block">
                 <img
                     src={img}
                     alt={`Post image ${index + 1}`}
                     style={{ width: "80px", height: "80px", objectFit: "cover", border: "1px solid #ddd", borderRadius: "4px" }}
-                    onError={(e) => { e.target.style.display = 'none'; /* Ẩn nếu ảnh lỗi */ }}
+                    onError={(e) => { e.target.style.display = 'none'; }}
                 />
             </a> : null
         ));
@@ -215,37 +242,37 @@ const PostManagement = () => {
             return <span className="text-muted fst-italic">Không có video</span>;
         }
         return videoUrls.map((video, index) => (
-            video.trim() ? // Chỉ render nếu URL không rỗng
+            video.trim() ?
             <a key={index} href={video} target="_blank" rel="noopener noreferrer" className="btn btn-outline-info btn-sm me-2 mb-2">
                 <FaPlayCircle className="me-1"/> Video {index + 1}
             </a> : null
         ));
     };
 
-
+    // --- Phần JSX render giữ nguyên như code bạn đã cung cấp ---
     return (
         <Container className="mt-4 mb-5">
             <h2 className="text-center mb-4">🎯 Quản lý Bài Viết</h2>
 
-            {isLoading && ( // Spinner chung cho các hành động chính
+            {isLoading && (
                 <div className="text-center my-3">
                     <Spinner animation="border" variant="primary" />
                     <p className="mt-2 text-muted">Đang xử lý...</p>
                 </div>
             )}
-            {error && !showEditModal && !showCreateModal && ( // Chỉ hiển thị lỗi chung nếu không có modal nào mở
+            {!isLoading && error && !showEditModal && !showCreateModal && (
                 <Alert variant="danger" onClose={clearMessages} dismissible className="d-flex align-items-center">
-                    <FaExclamationTriangle className="me-2"/> {error}
+                    <FaExclamationTriangle className="me-2 flex-shrink-0" size="1.3em"/> {error} {/* Error ở đây giờ đã là string */}
                 </Alert>
             )}
-            {successMessage && !showEditModal && !showCreateModal && (
+            {!isLoading && successMessage && !showEditModal && !showCreateModal && (
                 <Alert variant="success" onClose={clearMessages} dismissible className="d-flex align-items-center">
-                    <FaCheckCircle className="me-2"/> {successMessage}
+                    <FaCheckCircle className="me-2 flex-shrink-0" size="1.3em"/> {successMessage}
                 </Alert>
             )}
 
             <Card className="p-3 shadow-sm">
-                <div className="d-flex justify-content-end mb-3"> {/* Chuyển nút Thêm sang phải */}
+                <div className="d-flex justify-content-end mb-3">
                     <Button variant="primary" onClick={handleShowCreateModal} disabled={isLoading}>
                         <FaPlus className="me-2" /> Thêm bài viết mới
                     </Button>
@@ -269,7 +296,6 @@ const PostManagement = () => {
                                         <td>{post.id}</td>
                                         <td className="text-start">{post.title || <span className="text-muted fst-italic">Không có tiêu đề</span>}</td>
                                         <td className="text-start" style={{ whiteSpace: "pre-line", maxHeight: '100px', overflowY: 'auto' }}>
-                                            {/* Hiển thị một phần nội dung */}
                                             {Array.isArray(post.content) ?
                                                 (post.content.join("\n").substring(0, 150) + (post.content.join("\n").length > 150 ? "..." : ""))
                                                 : <span className="text-muted fst-italic">Không có nội dung</span>
@@ -306,13 +332,15 @@ const PostManagement = () => {
             </Card>
 
             {/* Modal Chỉnh Sửa Bài Viết */}
-            <Modal show={showEditModal} onHide={() => setShowEditModal(false)} backdrop="static" keyboard={false} centered>
+            <Modal show={showEditModal} onHide={() => { setShowEditModal(false); clearMessages(); }} backdrop="static" keyboard={false} centered>
                 <Modal.Header closeButton>
                     <Modal.Title><FaEdit className="me-2"/>Chỉnh sửa bài viết (ID: {selectedPost?.id})</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    {error && (showEditModal || showCreateModal) && ( // Hiển thị lỗi trong modal
-                        <Alert variant="danger" onClose={clearMessages} dismissible>{error}</Alert>
+                    {error && showEditModal && ( // Chỉ hiển thị lỗi này khi edit modal đang mở
+                        <Alert variant="danger" onClose={clearMessages} dismissible>
+                           <FaExclamationTriangle className="me-2"/> {error} {/* Error ở đây giờ đã là string */}
+                        </Alert>
                     )}
                     <Form>
                         <Form.Group controlId="editTitle" className="mb-3">
@@ -360,7 +388,7 @@ https://vimeo.com/video2"
                     </Form>
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowEditModal(false)} disabled={isLoading}>
+                    <Button variant="secondary" onClick={() => { setShowEditModal(false); clearMessages(); }} disabled={isLoading}>
                         <FaTimes className="me-1"/> Hủy
                     </Button>
                     <Button variant="success" onClick={handleSaveChanges} disabled={isLoading}>
@@ -371,13 +399,15 @@ https://vimeo.com/video2"
             </Modal>
 
             {/* Modal Thêm Bài Viết Mới */}
-            <Modal show={showCreateModal} onHide={() => setShowCreateModal(false)} backdrop="static" keyboard={false} centered>
+            <Modal show={showCreateModal} onHide={() => { setShowCreateModal(false); clearMessages(); }} backdrop="static" keyboard={false} centered>
                 <Modal.Header closeButton>
                     <Modal.Title><FaPlus className="me-2"/>Thêm bài viết mới</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                     {error && (showEditModal || showCreateModal) && (
-                        <Alert variant="danger" onClose={clearMessages} dismissible>{error}</Alert>
+                     {error && showCreateModal && ( // Chỉ hiển thị lỗi này khi create modal đang mở
+                        <Alert variant="danger" onClose={clearMessages} dismissible>
+                           <FaExclamationTriangle className="me-2"/> {error} {/* Error ở đây giờ đã là string */}
+                        </Alert>
                     )}
                     <Form>
                         <Form.Group controlId="newTitle" className="mb-3">
@@ -401,7 +431,7 @@ https://vimeo.com/video2" value={newPost.videoUrl} onChange={(e) => setNewPost({
                     </Form>
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowCreateModal(false)} disabled={isLoading}>
+                    <Button variant="secondary" onClick={() => { setShowCreateModal(false); clearMessages(); }} disabled={isLoading}>
                         <FaTimes className="me-1"/> Hủy
                     </Button>
                     <Button variant="success" onClick={handleCreatePost} disabled={isLoading}>
@@ -411,20 +441,14 @@ https://vimeo.com/video2" value={newPost.videoUrl} onChange={(e) => setNewPost({
                 </Modal.Footer>
             </Modal>
 
-            {/* CSS Custom (giữ nguyên hoặc tùy chỉnh thêm) */}
+            {/* CSS Custom (giữ nguyên) */}
             <style>
                 {`
                 .table-custom thead {
-                    /* background-color: #003366; */ /* Tạm thời bỏ màu nền này để dùng table-dark */
-                    /* color: white; */
                     text-align: center;
                 }
                 .table-custom td, .table-custom th {
-                    /* text-align: center; */ /* Bỏ căn giữa mặc định cho tất cả, để text-start có tác dụng */
                     vertical-align: middle;
-                }
-                .btn:hover {
-                    /* transform: scale(1.05); */ /* Hiệu ứng này có thể gây nhảy layout nhẹ */
                 }
                 .table-custom img {
                     transition: transform 0.2s ease-in-out;

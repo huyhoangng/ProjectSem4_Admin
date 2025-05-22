@@ -200,7 +200,7 @@ const Dashboard = () => {
             <div className="card-body text-center">
               <h5 className="card-title">Tổng số người dùng</h5>
               <p className="card-text fs-4 fw-bold">{userCount}</p>
-              <p className="card-text text-success small">🔼 +30% (so với tháng trước)</p> {/* Placeholder % */}
+              {/* <p className="card-text text-success small">🔼 +30% (so với tháng trước)</p> Placeholder % */}
             </div>
           </div>
         </div>
@@ -210,7 +210,7 @@ const Dashboard = () => {
             <div className="card-body text-center">
               <h5 className="card-title">Người dùng Premium</h5>
               <p className="card-text fs-4 fw-bold">{packageUserCount}</p>
-              <p className="card-text text-success small">🔼 +15% (người dùng trả phí)</p>
+              {/* <p className="card-text text-success small">🔼 +15% (người dùng trả phí)</p> */}
             </div>
           </div>
         </div>
@@ -220,7 +220,7 @@ const Dashboard = () => {
             <div className="card-body text-center">
               <h5 className="card-title">Tổng số bài viết</h5>
               <p className="card-text fs-4 fw-bold">{postCount}</p>
-              <p className="card-text text-danger small">🔽 -10% (hoạt động nội dung)</p> {/* Placeholder % */}
+              {/* <p className="card-text text-danger small">🔽 -10% (hoạt động nội dung)</p> Placeholder % */}
             </div>
           </div>
         </div>
@@ -230,7 +230,7 @@ const Dashboard = () => {
             <div className="card-body text-center">
               <h5 className="card-title">Doanh thu tháng</h5>
               <p className="card-text fs-4 fw-bold">{formatCurrency(monthlyRevenue)}</p>
-              <p className="card-text text-success small">🔼 +20% (doanh thu gộp)</p> {/* Placeholder % */}
+              {/* <p className="card-text text-success small">🔼 +20% (doanh thu gộp)</p> Placeholder % */}
             </div>
           </div>
         </div>

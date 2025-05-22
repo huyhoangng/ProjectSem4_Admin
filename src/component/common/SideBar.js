@@ -49,7 +49,7 @@ const Sidebar = () => {
           <div className="bg-white py-2 collapse-inner rounded">
             <h6 className="collapse-header">Khách hàng:</h6>
             <Link className="collapse-item" to="/usermanagement">Tài khoản người dùng</Link>
-            <Link className="collapse-item" to="/purchaseHistory">Lịch sử mua hàng app</Link>
+            <Link className="collapse-item" to="/purchaseHistory">Lịch sử sử dụng point</Link>
             <Link className="collapse-item" to="/bankPurchaseHistory">Lịch sử mua hàng</Link>
           </div>
         </div>
@@ -105,9 +105,9 @@ const Sidebar = () => {
 
       {/* Admin Management */}
       <li className="nav-item">
-        <Link className="nav-link" to="/adminmanager">
+        <Link className="nav-link" to="/coachmanager">
           <FaTable />
-          <span> Quản lý quản trị viên</span>
+          <span> Quản lý huấn luyện viên</span>
         </Link>
       </li>
 

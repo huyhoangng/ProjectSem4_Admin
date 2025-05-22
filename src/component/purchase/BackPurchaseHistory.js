@@ -304,8 +304,13 @@ const BankPurchaseHistory = () => {
                                             <td className="text-center">
                                                 {formatPaymentMethod(transaction.paymentMethod)}
                                             </td>
-                                            <td className="text-end fw-bold">
-                                                {transaction.amount?.toLocaleString('vi-VN')} VNĐ
+                                           <td className="text-end fw-bold">
+    
+                                              {typeof transaction.amount === 'number'
+                                                ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(transaction.amount)
+                                                : 'N/A'
+                                                                 }
+    
                                             </td>
                                             <td className="text-center">
                                                 {formatStatus(transaction.status)}

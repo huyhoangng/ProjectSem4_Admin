@@ -219,21 +219,21 @@ const PackageManagement = () => {
             <label htmlFor="itemName">Tên gói *</label>
         </div>
          <div className="form-floating">
-            <input type="number" className="form-control" id="itemPrice" name="price" placeholder="Giá (VNĐ)" value={itemData.price} onChange={handleInputChange} required min="0" />
-            <label htmlFor="itemPrice">Giá (VNĐ) *</label>
+            <input type="number" className="form-control" id="itemPrice" name="price" placeholder="Giá ($)" value={itemData.price} onChange={handleInputChange} required min="0" />
+            <label htmlFor="itemPrice">Giá (USD) *</label>
         </div>
         <div className="form-floating">
-            <input type="number" className="form-control" id="itemDuration" name="durationInDays" placeholder="Thời gian (ngày)" value={itemData.durationInDays} onChange={handleInputChange} required min="1" />
+            <input type="number" className="form-control" id="itemDuration" name="durationInDays" placeholder="Thời gian (ngày)" value={itemData.durationInDays} onChange={handleInputChange} required min="null" />
             <label htmlFor="itemDuration">Thời gian (ngày) *</label>
         </div>
         <div className="form-floating">
             <input type="number" className="form-control" id="itemPoints" name="pointsRequired" placeholder="Điểm yêu cầu" value={itemData.pointsRequired} onChange={handleInputChange} required min="0" />
             <label htmlFor="itemPoints">Điểm yêu cầu *</label>
         </div>
-        <div className="form-floating">
+        {/* <div className="form-floating">
             <input type="number" className="form-control" id="itemQuantity" name="quantity" placeholder="Số lượng" value={itemData.quantity} onChange={handleInputChange} required min="0" />
             <label htmlFor="itemQuantity">Số lượng *</label>
-        </div>
+        </div> */}
         <div className="form-floating">
             <textarea className="form-control" id="itemDescription" name="description" placeholder="Mô tả" value={itemData.description || ''} onChange={handleInputChange} rows="4" style={{ height: '100px' }} />
             <label htmlFor="itemDescription">Mô tả (tùy chọn)</label>
@@ -303,7 +303,7 @@ const PackageManagement = () => {
                     <tr>
                     <th scope="col" className="text-center fw-semibold py-3 fs-6">ID</th>
                     <th scope="col" className="text-start fw-semibold py-3 fs-6">Tên</th>
-                    <th scope="col" className="text-center text-nowrap fw-semibold py-3 fs-6">Giá (VNĐ)</th>
+                    <th scope="col" className="text-center text-nowrap fw-semibold py-3 fs-6">Giá ($)</th>
                     <th scope="col" className="text-center fw-semibold py-3 fs-6">Thời gian (ngày)</th>
                     <th scope="col" className="text-center fw-semibold py-3 fs-6">Số lượng</th>
                     <th scope="col" className="text-center fw-semibold py-3 fs-6">Điểm yêu cầu</th>
