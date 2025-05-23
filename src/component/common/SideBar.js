@@ -95,13 +95,13 @@ const Sidebar = () => {
         </Link>
       </li>
 
-      {/* Workout
+      {/* Workout*/}
       <li className="nav-item">
         <Link className="nav-link" to="/exercise">
           <FaDumbbell />
           <span> Bài tập </span>
         </Link>
-      </li> */}
+      </li> 
 
       {/* Admin Management */}
       <li className="nav-item">
